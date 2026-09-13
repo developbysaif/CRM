@@ -1,4 +1,5 @@
 'use client';
+export { default as GlobalSearchModal } from './GlobalSearchModal';
 
 export function LeadScoreBadge({ score }) {
   const getClass = () => {
@@ -18,7 +19,7 @@ export function LeadStatusBadge({ status }) {
   const icons = { Hot: '🔥', Warm: '⚡', Cold: '❄️' };
   return (
     <span className={`badge ${map[status] || 'badge-primary'}`}>
-      {icons[status]} {status}
+      {icons[status] || '📌'} {status}
     </span>
   );
 }
