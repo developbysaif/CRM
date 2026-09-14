@@ -70,6 +70,29 @@
   --foreground: var(--text-primary);
 }
 
+[data-theme="dark"],
+html.dark,
+body.dark {
+  /* Dark Theme Base */
+  --bg-base: #080f25;
+  --bg-surface: #0b1329;
+  --bg-card: #0f172a;
+  --bg-elevated: #1e293b;
+  --bg-input: #0f172a;
+  --bg-hover: #1e293b;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  --border-focus: rgba(0, 82, 255, 0.6);
+
+  /* Text */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-disabled: #64748b;
+}
+
 /* ==================== BASE RESET ==================== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

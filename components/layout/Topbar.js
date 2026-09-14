@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import GlobalSearchModal from '../ui/GlobalSearchModal';
+import ThemeToggle from '../ui/ThemeToggle';
 
 export default function Topbar({ title, subtitle }) {
   const [notifications, setNotifications] = useState([]);
@@ -182,6 +183,9 @@ export default function Topbar({ title, subtitle }) {
               </div>
             )}
           </div>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Quick AI Consultant Action */}
           <Link href="/chat" className="btn btn-primary btn-sm">
