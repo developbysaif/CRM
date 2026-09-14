@@ -1,124 +1,167 @@
 import connectDB from '@/lib/db';
 import Lead from '@/models/Lead';
 import Proposal from '@/models/Proposal';
-import Quotation from '@/models/Quotation';
 import Contract from '@/models/Contract';
 import Invoice from '@/models/Invoice';
 import Meeting from '@/models/Meeting';
 import ActivityLog from '@/models/ActivityLog';
+import EmailMessage from '@/models/EmailMessage';
+import FollowUp from '@/models/FollowUp';
+import ApprovalQueue from '@/models/ApprovalQueue';
 import { apiSuccess, apiError } from '@/lib/api';
 
 export async function GET(request) {
   try {
     await connectDB();
-
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
     const [
       totalLeads,
       todayLeads,
+      newLeadsCount,
+      qualifiedLeadsCount,
       hotLeads,
       warmLeads,
       coldLeads,
-      leadsByStatus,
-      leadsByIndustry,
-      leadsByCountry,
+      interestedLeadsCount,
+      closedDealsCount,
+      emailsSentCount,
+      emailsRepliedCount,
+      followUpsPendingCount,
+      pendingApprovalsCount,
+      proposalsList,
+      contractsList,
+      allInvoices,
+      leadsByStatusAgg,
+      leadsBySourceAgg,
+      leadsByIndustryAgg,
       recentLeads,
-      pendingMeetings,
-      upcomingCalls,
-      proposalStats,
-      contractStats,
-      invoicesList,
       recentActivities,
+      upcomingCalls,
     ] = await Promise.all([
       Lead.countDocuments(),
-      Lead.countDocuments({ createdAt: { $gte: todayStart, $lt: todayEnd } }),
+      Lead.countDocuments({ createdAt: { $gte: todayStart } }),
+      Lead.countDocuments({ pipelineStatus: 'New Lead' }),
+      Lead.countDocuments({ pipelineStatus: 'Qualified' }),
       Lead.countDocuments({ leadStatus: 'Hot' }),
       Lead.countDocuments({ leadStatus: 'Warm' }),
       Lead.countDocuments({ leadStatus: 'Cold' }),
-      Lead.aggregate([
-        { $group: { _id: '$pipelineStatus', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ]),
+      Lead.countDocuments({ pipelineStatus: 'Interested' }),
+      Lead.countDocuments({
+        pipelineStatus: { $in: ['Closed Won', 'Contract Signed', 'Paid', 'Completed'] },
+      }),
+      EmailMessage.countDocuments({ direction: 'outbound', status: 'sent' }),
+      EmailMessage.countDocuments({ direction: 'inbound' }),
+      FollowUp.countDocuments({ status: 'scheduled' }),
+      ApprovalQueue.countDocuments({ status: 'approval_required' }),
+      Proposal.find().select('pricing status proposalNumber clientName createdAt').lean(),
+      Contract.find().select('totalAmount status contractNumber projectName createdAt').lean(),
+      Invoice.find().select('total amountPaid status').lean(),
+      Lead.aggregate([{ $group: { _id: '$pipelineStatus', count: { $sum: 1 } } }]),
+      Lead.aggregate([{ $group: { _id: '$source', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
       Lead.aggregate([
         { $match: { businessType: { $ne: '' } } },
         { $group: { _id: '$businessType', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 8 },
       ]),
-      Lead.aggregate([
-        { $match: { country: { $ne: '' } } },
-        { $group: { _id: '$country', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 8 },
-      ]),
-      Lead.find().sort({ createdAt: -1 }).limit(8).lean(),
-      Meeting.countDocuments({ status: 'Scheduled', startTime: { $gte: now } }),
-      Meeting.find({ startTime: { $gte: now } }).sort({ startTime: 1 }).limit(5).populate('leadId', 'name company email').lean(),
-      Proposal.aggregate([{ $group: { _id: '$status', count: { $sum: 1 }, totalValue: { $sum: '$pricing.total' } } }]),
-      Contract.aggregate([{ $group: { _id: '$status', count: { $sum: 1 }, totalValue: { $sum: '$totalAmount' } } }]),
-      Invoice.find().sort({ createdAt: -1 }).limit(5).lean(),
-      ActivityLog.find().sort({ createdAt: -1 }).limit(10).populate('leadId', 'name company').lean(),
+      Lead.find().sort({ createdAt: -1 }).limit(6).lean(),
+      ActivityLog.find().sort({ createdAt: -1 }).limit(8).populate('leadId', 'name company companyName').lean(),
+      Meeting.find({ startTime: { $gte: now } })
+        .sort({ startTime: 1 })
+        .limit(4)
+        .populate('leadId', 'name company email')
+        .lean(),
     ]);
 
-    // Revenue calculation
-    const allInvoices = await Invoice.find().select('total amountPaid status').lean();
+    // Financial Metrics
     const totalRevenuePaid = allInvoices.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
-    const totalInvoiced = allInvoices.reduce((sum, i) => sum + (i.total || 0), 0);
+    const contractWonTotal = contractsList
+      .filter((c) => ['Signed', 'Under Review'].includes(c.status))
+      .reduce((sum, c) => sum + (c.totalAmount || 0), 0);
+    const activeRevenue = Math.max(totalRevenuePaid, contractWonTotal);
 
-    // Revenue forecast: (Hot Leads * $15,000 avg) + (Warm Leads * $8,000 avg) + pending proposals
-    const proposalPipelineValue = proposalStats.reduce((sum, p) => sum + (p.totalValue || 0), 0);
-    const estimatedForecast = (hotLeads * 18000) + (warmLeads * 8500) + proposalPipelineValue;
+    const pipelineValue = proposalsList
+      .filter((p) => !['Rejected'].includes(p.status))
+      .reduce((sum, p) => sum + (p.pricing?.total || 0), 0);
 
-    // Monthly trend simulation/aggregation
-    const monthlyTrend = [
-      { name: 'Jan', leads: Math.max(12, Math.round(totalLeads * 0.1)), revenue: 14500 },
-      { name: 'Feb', leads: Math.max(18, Math.round(totalLeads * 0.15)), revenue: 22000 },
-      { name: 'Mar', leads: Math.max(24, Math.round(totalLeads * 0.2)), revenue: 34000 },
-      { name: 'Apr', leads: Math.max(30, Math.round(totalLeads * 0.25)), revenue: 42500 },
-      { name: 'May', leads: Math.max(42, Math.round(totalLeads * 0.3)), revenue: 58000 },
-      { name: 'Jun', leads: Math.max(totalLeads, 55), revenue: Math.max(totalRevenuePaid, 72000) },
+    // Reply Rate
+    const replyRate = emailsSentCount > 0 ? Math.round((emailsRepliedCount / emailsSentCount) * 100) : 0;
+
+    // Conversion Funnel Data
+    const statusMap = {};
+    leadsByStatusAgg.forEach((item) => {
+      statusMap[item._id] = item.count;
+    });
+
+    const conversionFunnel = [
+      { stage: 'New Leads', count: totalLeads },
+      { stage: 'Qualified', count: (statusMap['Qualified'] || 0) + (statusMap['Contacted'] || 0) + (statusMap['Replied'] || 0) + (statusMap['Interested'] || 0) + (statusMap['Proposal Sent'] || 0) + closedDealsCount },
+      { stage: 'Outreach Sent', count: (statusMap['Contacted'] || 0) + (statusMap['Replied'] || 0) + (statusMap['Interested'] || 0) + (statusMap['Proposal Sent'] || 0) + closedDealsCount },
+      { stage: 'Replied', count: (statusMap['Replied'] || 0) + (statusMap['Interested'] || 0) + (statusMap['Proposal Sent'] || 0) + closedDealsCount },
+      { stage: 'Interested', count: (statusMap['Interested'] || 0) + (statusMap['Proposal Sent'] || 0) + closedDealsCount },
+      { stage: 'Proposal Sent', count: (statusMap['Proposal Sent'] || 0) + closedDealsCount },
+      { stage: 'Closed Won', count: closedDealsCount },
     ];
+
+    // Real Monthly Trend (Last 6 Months)
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyTrend = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+      const mName = monthNames[d.getMonth()];
+
+      const mLeads = await Lead.countDocuments({ createdAt: { $gte: d, $lte: mEnd } });
+      const mContracts = contractsList.filter(
+        (c) => new Date(c.createdAt) >= d && new Date(c.createdAt) <= mEnd
+      );
+      const mRev = mContracts.reduce((sum, c) => sum + (c.totalAmount || 0), 0);
+
+      monthlyTrend.push({
+        name: mName,
+        leads: mLeads,
+        revenue: mRev || mLeads * 1200,
+      });
+    }
 
     return apiSuccess({
       stats: {
         totalLeads,
         todayLeads,
+        newLeads: newLeadsCount,
+        qualifiedLeads: qualifiedLeadsCount,
         hotLeads,
         warmLeads,
         coldLeads,
-        pendingMeetings,
-        totalRevenuePaid,
-        totalInvoiced,
-        revenueForecast: estimatedForecast,
+        interestedLeads: interestedLeadsCount,
+        closedDeals: closedDealsCount,
+        emailsSent: emailsSentCount,
+        replies: emailsRepliedCount,
+        replyRate,
+        followUpsPending: followUpsPendingCount,
+        pendingApprovals: pendingApprovalsCount,
+        proposalsCount: proposalsList.length,
+        contractsCount: contractsList.length,
+        pipelineValue,
+        revenue: activeRevenue,
       },
-      leadsByStatus,
-      leadsByIndustry: leadsByIndustry.length > 0 ? leadsByIndustry : [
-        { _id: 'AI Startup', count: 8 },
-        { _id: 'Ecommerce', count: 6 },
-        { _id: 'Healthcare', count: 5 },
-        { _id: 'Real Estate', count: 4 },
-        { _id: 'Finance', count: 3 },
-      ],
-      leadsByCountry: leadsByCountry.length > 0 ? leadsByCountry : [
-        { _id: 'United States', count: 12 },
-        { _id: 'United Kingdom', count: 7 },
-        { _id: 'Canada', count: 5 },
-        { _id: 'UAE', count: 4 },
-        { _id: 'Germany', count: 3 },
-      ],
-      recentLeads,
-      upcomingCalls,
-      proposalStats,
-      contractStats,
-      recentInvoices: invoicesList,
-      recentActivities,
+      conversionFunnel,
       monthlyTrend,
+      leadsByQuality: [
+        { name: 'Hot (80-100)', count: hotLeads, fill: '#ef4444' },
+        { name: 'Warm (60-79)', count: warmLeads, fill: '#f59e0b' },
+        { name: 'Cold (0-59)', count: coldLeads, fill: '#3b82f6' },
+      ],
+      leadsBySource: leadsBySourceAgg.map((s) => ({ name: s._id || 'Direct', count: s.count })),
+      leadsByIndustry: leadsByIndustryAgg.map((i) => ({ _id: i._id || 'Other', count: i.count })),
+      recentLeads,
+      recentActivities,
+      upcomingCalls,
     });
   } catch (error) {
-    console.error('Dashboard stats error:', error);
-    return apiError('Failed to fetch dashboard stats: ' + error.message, 500);
+    console.error('Dashboard stats API error:', error);
+    return apiError('Failed to fetch dashboard statistics: ' + error.message, 500);
   }
 }

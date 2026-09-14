@@ -40,12 +40,11 @@ const ProjectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-ProjectSchema.pre('save', async function (next) {
+ProjectSchema.pre('save', async function () {
   if (!this.projectCode) {
     const count = (await mongoose.models.Project?.countDocuments()) || 0;
     this.projectCode = `PRJ-${String(count + 1).padStart(5, '0')}`;
   }
-  next();
 });
 
 export default mongoose.models.Project || mongoose.model('Project', ProjectSchema);

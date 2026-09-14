@@ -5,20 +5,21 @@ import { toast } from '@/components/ui/Toaster';
 import { Spinner } from '@/components/ui/index';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('ai');
+  const [activeTab, setActiveTab] = useState('providers');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
-  const [testingApify, setTestingApify] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showGoogleKey, setShowGoogleKey] = useState(false);
   const [showApifyToken, setShowApifyToken] = useState(false);
   const [showResendKey, setShowResendKey] = useState(false);
 
   const [settings, setSettings] = useState({
     openaiApiKey: '',
     openaiModel: 'gpt-4o',
+    googlePlacesApiKey: '',
     apifyApiToken: '',
-    apifyDefaultActor: 'apify/website-content-crawler',
+    apifyDefaultActor: 'compass/crawler-google-places',
     resendApiKey: '',
     resendFromEmail: 'onboarding@resend.dev',
     companyName: 'LeadAI Pro Software Agency',
@@ -29,6 +30,8 @@ export default function SettingsPage() {
     taxNumber: 'US-987654321',
     defaultCurrency: 'USD',
     defaultTaxRate: 10,
+    emailSignature: 'Best regards,\nSales & Partnership Team\nLeadAI Pro Agency',
+    services: [],
     smtpHost: '',
     smtpPort: 587,
     smtpUser: '',
@@ -36,26 +39,29 @@ export default function SettingsPage() {
     smtpSecure: false,
     fromEmail: 'noreply@leadaipro.com',
     scoringWeights: {
-      budgetMaxWeight: 25,
-      timelineUrgencyWeight: 15,
-      projectTypeWeight: 15,
-      businessTypeWeight: 10,
-      featuresWeight: 15,
-      countryWeight: 10,
-      companyAndPhoneWeight: 10,
+      websiteMissingWeight: 25,
+      poorWebsiteWeight: 20,
+      poorMobileWeight: 10,
+      poorSeoWeight: 10,
+      lowPerformanceWeight: 10,
+      highReviewCountWeight: 5,
+      strongCategoryWeight: 5,
+      publicEmailWeight: 5,
+      phoneAvailableWeight: 5,
+      buyingSignalWeight: 5,
     },
     automations: {
-      sendWelcomeEmail: true,
-      sendProposalEmail: true,
-      sendQuotationEmail: true,
-      sendContractEmail: true,
-      sendInvoiceEmail: true,
-      sendPaymentReceiptEmail: true,
-      sendMeetingReminderEmail: true,
-      sendFollowupEmail: true,
-      autoCreateLeadOnChat: true,
-      enableRealtimeNotifications: true,
-      autoEnrichWithApify: false,
+      requireApprovalForOutreach: true,
+      requireApprovalForProposals: true,
+      requireApprovalForContracts: true,
+      autoCreateProposalOnInterested: true,
+      autoCreateContractOnClosedWon: true,
+      notifyOwnerOnContractGenerated: true,
+      enableFollowUpSequences: true,
+      autoStopFollowUpOnReply: true,
+      dailyOutreachLimit: 50,
+      followUpIntervalDays: 7,
+      maxFollowUps: 5,
     },
   });
 
@@ -69,6 +75,7 @@ export default function SettingsPage() {
             ...d.data,
             scoringWeights: { ...prev.scoringWeights, ...(d.data.scoringWeights || {}) },
             automations: { ...prev.automations, ...(d.data.automations || {}) },
+            services: d.data.services || prev.services,
           }));
         }
       })
@@ -87,7 +94,7 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('Settings updated and synced successfully!');
+        toast.success('Settings updated and synced securely!');
       } else {
         toast.error(data.message || 'Failed to save settings');
       }
@@ -127,34 +134,12 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleTestApify() {
-    setTestingApify(true);
-    try {
-      const res = await fetch('/api/apify/website-audit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: 'https://example.com' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success('Apify scraper engine connection tested successfully!');
-      } else {
-        toast.error(data.message || 'Apify test failed');
-      }
-    } catch {
-      toast.error('Error testing Apify connection');
-    } finally {
-      setTestingApify(false);
-    }
-  }
-
   const tabs = [
-    { id: 'ai', label: '🤖 AI Engine', icon: '🧠' },
-    { id: 'apify', label: '🕷️ Apify Scrapers', icon: '🕷️' },
-    { id: 'email', label: '✉️ Resend & Email', icon: '✉️' },
-    { id: 'company', label: '🏢 Agency & Branding', icon: '🏢' },
-    { id: 'scoring', label: '🎯 Lead Scoring', icon: '🎯' },
-    { id: 'automations', label: '⚡ Automations', icon: '⚡' },
+    { id: 'providers', label: '🎯 Lead Providers & APIs', icon: '🔑' },
+    { id: 'automations', label: '🛡️ Approvals & Automations', icon: '⚡' },
+    { id: 'company', label: '🏢 Business Profile & Services', icon: '🏢' },
+    { id: 'email', label: '✉️ Email & Resend', icon: '✉️' },
+    { id: 'scoring', label: '🎯 AI Scoring Weights', icon: '🎯' },
     { id: 'env', label: '📄 Environment Config', icon: '📄' },
   ];
 
@@ -169,7 +154,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <AppLayout title="Platform Settings" subtitle="Configure AI models, Apify scraping, Resend email automation, and scoring weights">
+    <AppLayout
+      title="Platform Settings & Configurations"
+      subtitle="Manage Google Places API, Apify Scrapers, Resend credentials, Services catalog, and Approval rules"
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
@@ -192,90 +180,55 @@ export default function SettingsPage() {
       </div>
 
       <div style={{ maxWidth: 960 }}>
-        {/* Tab 1: AI Engine */}
-        {activeTab === 'ai' && (
+        {/* Tab 1: Lead Providers & APIs */}
+        {activeTab === 'providers' && (
           <div className="card" style={{ padding: 28 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-              🤖 OpenAI & Intelligence Engine
+              🔑 External API Integrations (Masked & Protected)
             </h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24 }}>
-              Configure your OpenAI API key and models for conversational qualification, proposal generation, contract drafts, and website audits.
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+              Keys are stored securely server-side and never broadcast to browser environments.
             </p>
 
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Google Places API */}
               <div className="form-group">
-                <label className="input-label">OpenAI API Key</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="input-label" style={{ fontWeight: 700 }}>Google Maps & Places API Key</label>
+                  {settings.isEnvConfigured?.google && (
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active in .env.local ✅</span>
+                  )}
+                </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
-                    type={showApiKey ? 'text' : 'password'}
+                    type={showGoogleKey ? 'text' : 'password'}
                     className="input"
-                    placeholder="sk-proj-..."
-                    value={settings.openaiApiKey || ''}
-                    onChange={(e) => setSettings({ ...settings, openaiApiKey: e.target.value })}
+                    placeholder="AIzaSy..."
+                    value={settings.googlePlacesApiKey || ''}
+                    onChange={(e) => setSettings({ ...settings, googlePlacesApiKey: e.target.value })}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
+                    onClick={() => setShowGoogleKey(!showGoogleKey)}
                     className="btn btn-secondary btn-sm"
                     style={{ flexShrink: 0 }}
                   >
-                    {showApiKey ? '🙈 Hide' : '👁️ Show'}
+                    {showGoogleKey ? '🙈 Hide' : '👁️ Show'}
                   </button>
                 </div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                  Fallback Engine: When left empty, the platform automatically activates deterministic heuristic AI for 100% offline uptime.
+                <span style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  Used by GooglePlacesProvider for Places TextSearch, Place Details, ratings, and phone enrichment.
                 </span>
               </div>
 
+              {/* Apify API Token */}
               <div className="form-group">
-                <label className="input-label">OpenAI Model</label>
-                <select
-                  className="input"
-                  value={settings.openaiModel || 'gpt-4o'}
-                  onChange={(e) => setSettings({ ...settings, openaiModel: e.target.value })}
-                >
-                  <option value="gpt-4o">GPT-4o (Recommended: Fast, Flagship Multimodal)</option>
-                  <option value="gpt-4o-mini">GPT-4o Mini (Cost Efficient & High Speed)</option>
-                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                </select>
-              </div>
-
-              <div style={{ padding: 16, background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary-light)', marginBottom: 4 }}>
-                  ⚡ Dual-Engine Fallback Guarantee
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="input-label" style={{ fontWeight: 700 }}>Apify API Token</label>
+                  {settings.isEnvConfigured?.apify && (
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active in .env.local ✅</span>
+                  )}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  If OpenAI quota is exhausted or an invalid key is provided, the platform seamlessly synthesizes comprehensive proposals, quotations, legal contracts, Core Web Vitals audits, and competitor breakdowns using deterministic heuristics with zero user interruption.
-                </div>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Tab 2: Apify Configuration */}
-        {activeTab === 'apify' && (
-          <div className="card" style={{ padding: 28 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>🕷️ Apify Web Scrapers & Lead Discovery</h3>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                  Integrate Apify to scrape websites for AI audits, deep competitor analysis, and automated business lead generation.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleTestApify}
-                disabled={testingApify}
-                className="btn btn-secondary btn-sm"
-              >
-                {testingApify ? <Spinner size={14} /> : '⚡ Test Scraper Run'}
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div className="form-group">
-                <label className="input-label">Apify API Token (Server-side Only)</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
                     type={showApifyToken ? 'text' : 'password'}
@@ -293,198 +246,174 @@ export default function SettingsPage() {
                     {showApifyToken ? '🙈 Hide' : '👁️ Show'}
                   </button>
                 </div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                  Security: Token is read only on the backend and never exposed to the frontend.
+                <span style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  Used by ApifyProvider for crawling Google Places and deep website content analysis.
+                </span>
+              </div>
+
+              {/* OpenAI API Key */}
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="input-label" style={{ fontWeight: 700 }}>OpenAI API Key</label>
+                  {settings.isEnvConfigured?.openai && (
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active in .env.local ✅</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type={showApiKey ? 'text' : 'password'}
+                    className="input"
+                    placeholder="sk-proj-..."
+                    value={settings.openaiApiKey || ''}
+                    onChange={(e) => setSettings({ ...settings, openaiApiKey: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {showApiKey ? '🙈 Hide' : '👁️ Show'}
+                  </button>
+                </div>
+                <span style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  Powers AI Lead Scoring, Personalized Outreach drafts, and Proposal synthesis.
                 </span>
               </div>
 
               <div className="form-group">
-                <label className="input-label">Default Website Crawler Actor</label>
-                <input
+                <label className="input-label">OpenAI Flagship Model</label>
+                <select
                   className="input"
-                  value={settings.apifyDefaultActor || 'apify/website-content-crawler'}
-                  onChange={(e) => setSettings({ ...settings, apifyDefaultActor: e.target.value })}
-                  placeholder="apify/website-content-crawler"
-                />
-              </div>
-
-              <div style={{ padding: 16, background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary-light)', marginBottom: 4 }}>
-                  🛡️ Duplicate Detection & Normalization Engine
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  Apify scraped leads are automatically checked against your MongoDB CRM records to filter out duplicates, normalized with structured contact schemas, and evaluated by the 0–100 AI Lead Scoring engine before saving.
-                </div>
+                  value={settings.openaiModel || 'gpt-4o'}
+                  onChange={(e) => setSettings({ ...settings, openaiModel: e.target.value })}
+                >
+                  <option value="gpt-4o">GPT-4o (Recommended: Flagship Reasoning & Multimodal)</option>
+                  <option value="gpt-4o-mini">GPT-4o Mini (Ultra Fast & Cost Efficient)</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                </select>
               </div>
             </form>
           </div>
         )}
 
-        {/* Tab 3: Resend & Email */}
-        {activeTab === 'email' && (
+        {/* Tab 2: Approvals & Automations */}
+        {activeTab === 'automations' && (
           <div className="card" style={{ padding: 28 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>✉️ Email Provider: Resend & SMTP Fallback</h3>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                  Configure Resend or SMTP to dispatch automated Welcome emails, Proposals, Contracts, Invoices, and Meeting reminders.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleTestEmail}
-                disabled={testingEmail}
-                className="btn btn-secondary btn-sm"
-              >
-                {testingEmail ? <Spinner size={14} /> : '📨 Send Test Email'}
-              </button>
-            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+              🛡️ Human Approval Gating & Automation Rules
+            </h3>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+              Enforce commercial safety rules: Prevent sensitive emails, proposals, and contracts from auto-sending.
+            </p>
 
-            <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              {/* Resend Section */}
-              <div style={{ gridColumn: '1 / -1', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary-light)', marginBottom: 12 }}>
-                  1. Resend API Configuration (Primary Provider)
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div className="form-group">
-                    <label className="input-label">Resend API Key</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        type={showResendKey ? 'text' : 'password'}
-                        className="input"
-                        placeholder="re_..."
-                        value={settings.resendApiKey || ''}
-                        onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowResendKey(!showResendKey)}
-                        className="btn btn-secondary btn-sm"
-                        style={{ flexShrink: 0 }}
-                      >
-                        {showResendKey ? '🙈 Hide' : '👁️ Show'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="input-label">Verified From Email Address</label>
-                    <input
-                      type="email"
-                      className="input"
-                      placeholder="sales@yourdomain.com or onboarding@resend.dev"
-                      value={settings.resendFromEmail || ''}
-                      onChange={(e) => setSettings({ ...settings, resendFromEmail: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* SMTP Fallback Section */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-                  2. Nodemailer SMTP Fallback Configuration
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="input-label">SMTP Host</label>
-                <input
-                  className="input"
-                  placeholder="smtp.mailgun.org / smtp.sendgrid.net"
-                  value={settings.smtpHost || ''}
-                  onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="input-label">SMTP Port</label>
-                <input
-                  type="number"
-                  className="input"
-                  placeholder="587"
-                  value={settings.smtpPort || 587}
-                  onChange={(e) => setSettings({ ...settings, smtpPort: Number(e.target.value) })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="input-label">SMTP Username</label>
-                <input
-                  className="input"
-                  placeholder="postmaster@yourdomain.com"
-                  value={settings.smtpUser || ''}
-                  onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="input-label">SMTP Password</label>
-                <input
-                  type="password"
-                  className="input"
-                  placeholder="••••••••••••"
-                  value={settings.smtpPass || ''}
-                  onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="input-label">SMTP From Email Address</label>
-                <input
-                  type="email"
-                  className="input"
-                  placeholder="noreply@leadaipro.com"
-                  value={settings.fromEmail || ''}
-                  onChange={(e) => setSettings({ ...settings, fromEmail: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                {
+                  key: 'requireApprovalForOutreach',
+                  label: '🛡️ Require Human Approval for AI Outreach Messages',
+                  desc: 'All cold emails and personalized follow-ups will stay in "Approval Required" status until clicked.',
+                },
+                {
+                  key: 'requireApprovalForProposals',
+                  label: '📄 Require Human Approval for Proposals',
+                  desc: 'Auto-generated proposals remain in DRAFT status and require review before delivery.',
+                },
+                {
+                  key: 'requireApprovalForContracts',
+                  label: '📝 Require Human Approval for Contracts',
+                  desc: 'Legal contracts created on CLOSED WON remain in DRAFT status until explicitly authorized.',
+                },
+                {
+                  key: 'autoCreateProposalOnInterested',
+                  label: '🤖 Auto-Draft Proposal when Lead becomes "Interested"',
+                  desc: 'Prepares scope, timeline, and pricing in DRAFT as soon as positive reply intent is detected.',
+                },
+                {
+                  key: 'autoCreateContractOnClosedWon',
+                  label: '📝 Auto-Draft Contract on "Closed Won"',
+                  desc: 'Generates legal agreement document in DRAFT as soon as a deal reaches Closed Won stage.',
+                },
+                {
+                  key: 'notifyOwnerOnContractGenerated',
+                  label: '⚡ Immediate CRM Owner Notification on Contract Creation',
+                  desc: 'Sends prompt alert with View, Download PDF, and Send options to CRM owner.',
+                },
+                {
+                  key: 'enableFollowUpSequences',
+                  label: '⏱️ Enable 5-Step Automated Follow-Up Sequences',
+                  desc: 'Schedules 7-day cadence follow-ups after initial outreach is approved and sent.',
+                },
+                {
+                  key: 'autoStopFollowUpOnReply',
+                  label: '🛑 Automatic Killswitch on Client Reply or Unsubscribe',
+                  desc: 'Instantly halts all pending follow-ups when prospect replies, unsubscribes, or closes.',
+                },
+              ].map((item) => (
+                <label
+                  key={item.key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 16,
+                    padding: 14,
+                    background: '#f8fafc',
+                    borderRadius: 8,
+                    border: '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                  }}
+                >
                   <input
                     type="checkbox"
-                    checked={!!settings.smtpSecure}
-                    onChange={(e) => setSettings({ ...settings, smtpSecure: e.target.checked })}
-                    style={{ width: 16, height: 16, accentColor: 'var(--primary)' }}
+                    checked={Boolean(settings.automations?.[item.key])}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        automations: {
+                          ...settings.automations,
+                          [item.key]: e.target.checked,
+                        },
+                      })
+                    }
+                    style={{ width: 18, height: 18, marginTop: 3, accentColor: '#2563eb', flexShrink: 0 }}
                   />
-                  Use SSL/TLS Encryption (Port 465)
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{item.label}</div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{item.desc}</div>
+                  </div>
                 </label>
-              </div>
-            </form>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Tab 4: Company & Branding */}
+        {/* Tab 3: Business Profile & Services Catalog */}
         {activeTab === 'company' && (
           <div className="card" style={{ padding: 28 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-              🏢 Company Profile & Branding
+              🏢 Business Profile & Services Pricing Engine
             </h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24 }}>
-              These business details automatically populate on generated Proposals, Quotations, Legal Contracts, and Invoices.
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+              Configured company identity, services catalog, and email signatures are used by AI when generating proposals and contracts.
             </p>
 
-            <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
               <div className="form-group">
-                <label className="input-label">Agency / Company Name</label>
+                <label className="input-label">Agency / Business Name</label>
                 <input
                   className="input"
                   value={settings.companyName || ''}
                   onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
-                  placeholder="e.g. LeadAI Pro Agency"
                 />
               </div>
 
               <div className="form-group">
-                <label className="input-label">Official Sales Email</label>
+                <label className="input-label">Official Outreach Email</label>
                 <input
                   type="email"
                   className="input"
                   value={settings.companyEmail || ''}
                   onChange={(e) => setSettings({ ...settings, companyEmail: e.target.value })}
-                  placeholder="sales@company.com"
                 />
               </div>
 
@@ -494,67 +423,120 @@ export default function SettingsPage() {
                   className="input"
                   value={settings.companyPhone || ''}
                   onChange={(e) => setSettings({ ...settings, companyPhone: e.target.value })}
-                  placeholder="+1 (800) 555-0199"
                 />
               </div>
 
               <div className="form-group">
-                <label className="input-label">Company Website URL</label>
+                <label className="input-label">Website URL</label>
                 <input
                   className="input"
                   value={settings.companyWebsite || ''}
                   onChange={(e) => setSettings({ ...settings, companyWebsite: e.target.value })}
-                  placeholder="https://company.com"
                 />
               </div>
 
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="input-label">Registered Headquarters Address</label>
+                <label className="input-label">Headquarters Address</label>
                 <input
                   className="input"
                   value={settings.companyAddress || ''}
                   onChange={(e) => setSettings({ ...settings, companyAddress: e.target.value })}
-                  placeholder="100 Innovation Way, Suite 500, San Francisco, CA"
                 />
               </div>
 
-              <div className="form-group">
-                <label className="input-label">Tax / VAT / EIN Number</label>
-                <input
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="input-label">Default Email Signature</label>
+                <textarea
                   className="input"
-                  value={settings.taxNumber || ''}
-                  onChange={(e) => setSettings({ ...settings, taxNumber: e.target.value })}
-                  placeholder="US-987654321"
+                  rows={3}
+                  value={settings.emailSignature || ''}
+                  onChange={(e) => setSettings({ ...settings, emailSignature: e.target.value })}
                 />
               </div>
+            </form>
 
+            {/* Services Catalog */}
+            <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>
+              Configurable Services Catalog
+            </h4>
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Service Name</th>
+                    <th>Base Price</th>
+                    <th>Delivery Days</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(settings.services || []).map((srv, idx) => (
+                    <tr key={idx}>
+                      <td style={{ fontWeight: 600 }}>{srv.name}</td>
+                      <td>${(srv.basePrice || 0).toLocaleString()} {srv.currency}</td>
+                      <td>{srv.deliveryDays || 14} days</td>
+                      <td style={{ fontSize: 12, color: '#64748b' }}>{srv.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Email & Resend */}
+        {activeTab === 'email' && (
+          <div className="card" style={{ padding: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>✉️ Resend & SMTP Email Infrastructure</h3>
+                <p style={{ fontSize: 13, color: '#64748b' }}>
+                  Dispatch outreach emails, proposals, and contracts with high deliverability.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleTestEmail}
+                disabled={testingEmail}
+                className="btn btn-secondary btn-sm"
+              >
+                {testingEmail ? <Spinner size={14} /> : '⚡ Dispatch Test Email'}
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div className="form-group">
-                <label className="input-label">Default Currency</label>
-                <select
-                  className="input"
-                  value={settings.defaultCurrency || 'USD'}
-                  onChange={(e) => setSettings({ ...settings, defaultCurrency: e.target.value })}
-                >
-                  <option value="USD">USD ($ - US Dollar)</option>
-                  <option value="EUR">EUR (€ - Euro)</option>
-                  <option value="GBP">GBP (£ - British Pound)</option>
-                  <option value="CAD">CAD ($ - Canadian Dollar)</option>
-                  <option value="AUD">AUD ($ - Australian Dollar)</option>
-                  <option value="AED">AED (د.إ - UAE Dirham)</option>
-                  <option value="PKR">PKR (₨ - Pakistani Rupee)</option>
-                  <option value="INR">INR (₹ - Indian Rupee)</option>
-                </select>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="input-label" style={{ fontWeight: 700 }}>Resend API Key</label>
+                  {settings.isEnvConfigured?.resend && (
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active in .env.local ✅</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type={showResendKey ? 'text' : 'password'}
+                    className="input"
+                    placeholder="re_..."
+                    value={settings.resendApiKey || ''}
+                    onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResendKey(!showResendKey)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {showResendKey ? '🙈 Hide' : '👁️ Show'}
+                  </button>
+                </div>
               </div>
 
               <div className="form-group">
-                <label className="input-label">Default Tax / VAT Rate (%)</label>
+                <label className="input-label">From Email Address</label>
                 <input
-                  type="number"
-                  min="0"
-                  max="100"
                   className="input"
-                  value={settings.defaultTaxRate ?? 10}
-                  onChange={(e) => setSettings({ ...settings, defaultTaxRate: Number(e.target.value) })}
+                  value={settings.resendFromEmail || 'onboarding@resend.dev'}
+                  onChange={(e) => setSettings({ ...settings, resendFromEmail: e.target.value })}
                 />
               </div>
             </form>
@@ -565,36 +547,36 @@ export default function SettingsPage() {
         {activeTab === 'scoring' && (
           <div className="card" style={{ padding: 28 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-              🎯 Lead Qualification Scoring Model (0–100)
+              🎯 AI Lead Scoring Weights (0–100 Engine)
             </h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24 }}>
-              Customize the mathematical weight contribution of each dimension when scoring new client leads.
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+              Tune the mathematical point contribution of digital gaps and buying signals.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {[
-                { key: 'budgetMaxWeight', label: '💰 Budget Scale & Range Weight', desc: 'Points awarded based on total project budget volume', default: 25 },
-                { key: 'timelineUrgencyWeight', label: '⏱️ Project Timeline Urgency Weight', desc: 'Points for ASAP / 1-month delivery targets', default: 15 },
-                { key: 'projectTypeWeight', label: '🛠️ Project Scope & Complexity Weight', desc: 'Points for Enterprise SaaS, AI, and Full-Stack apps', default: 15 },
-                { key: 'businessTypeWeight', label: '🏢 Business Maturity Weight', desc: 'Points for established enterprises and growing startups', default: 10 },
-                { key: 'featuresWeight', label: '✨ Feature Richness Weight', desc: 'Points for depth of requirements and integrations selected', default: 15 },
-                { key: 'countryWeight', label: '🌍 Target Market & Country Weight', desc: 'Points for Tier 1 international markets', default: 10 },
-                { key: 'companyAndPhoneWeight', label: '📞 Verified Contact Data Weight', desc: 'Points for providing verifiable phone, company, and email', default: 10 },
+                { key: 'websiteMissingWeight', label: '🚫 Website Missing Weight', default: 25 },
+                { key: 'poorWebsiteWeight', label: '⚠️ Outdated / Poor Website Weight', default: 20 },
+                { key: 'poorMobileWeight', label: '📱 Subpar Mobile Experience Weight', default: 10 },
+                { key: 'poorSeoWeight', label: '🔍 Weak SEO Architecture Weight', default: 10 },
+                { key: 'lowPerformanceWeight', label: '⚡ Slow TTFB / Performance Weight', default: 10 },
+                { key: 'highReviewCountWeight', label: '⭐ High Review Volume (15+ reviews)', default: 5 },
+                { key: 'strongCategoryWeight', label: '🏢 High-Ticket Business Category', default: 5 },
+                { key: 'publicEmailWeight', label: '✉️ Public Reachable Email Found', default: 5 },
+                { key: 'phoneAvailableWeight', label: '📞 Direct Telephone Reachable', default: 5 },
+                { key: 'buyingSignalWeight', label: '🎯 High Reputation with Digital Gap', default: 5 },
               ].map((item) => (
-                <div key={item.key} style={{ padding: 14, background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{item.label}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.desc}</div>
-                    </div>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary-light)', padding: '2px 8px', background: 'rgba(99,102,241,0.1)', borderRadius: 6 }}>
+                <div key={item.key} style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{item.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#2563eb' }}>
                       {settings.scoringWeights?.[item.key] ?? item.default} pts
                     </span>
                   </div>
                   <input
                     type="range"
                     min="0"
-                    max="50"
+                    max="40"
                     value={settings.scoringWeights?.[item.key] ?? item.default}
                     onChange={(e) =>
                       setSettings({
@@ -605,7 +587,7 @@ export default function SettingsPage() {
                         },
                       })
                     }
-                    style={{ width: '100%', accentColor: 'var(--primary)' }}
+                    style={{ width: '100%', accentColor: '#2563eb' }}
                   />
                 </div>
               ))}
@@ -613,118 +595,36 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Tab 6: Automations */}
-        {activeTab === 'automations' && (
-          <div className="card" style={{ padding: 28 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-              ⚡ Sales Automation & Email Triggers
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24 }}>
-              Toggle automated CRM email dispatches, lead prospecting hooks, and background routines.
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[
-                { key: 'sendWelcomeEmail', label: '✉️ Welcome Email Trigger', desc: 'Dispatches onboarding email when a new lead is captured via AI Chat or Apify' },
-                { key: 'sendProposalEmail', label: '📄 Proposal Email Trigger', desc: 'Sends email with link & PDF as soon as an executive proposal is created' },
-                { key: 'sendQuotationEmail', label: '💰 Quotation Email Trigger', desc: 'Sends itemized quote breakdown upon quotation generation' },
-                { key: 'sendContractEmail', label: '📝 Contract Signing Email Trigger', desc: 'Notifies client that Master Services Agreement is ready for e-signature' },
-                { key: 'sendInvoiceEmail', label: '🧾 Invoice Billing Email Trigger', desc: 'Sends invoice notification with online payment link' },
-                { key: 'sendPaymentReceiptEmail', label: '🎉 Payment Receipt Email Trigger', desc: 'Sends Thank You confirmation and receipt when invoice payment is recorded' },
-                { key: 'sendMeetingReminderEmail', label: '📅 Discovery Meeting Reminder', desc: 'Sends Google Meet invitation & reminder when a call is scheduled' },
-                { key: 'autoCreateLeadOnChat', label: '🤖 Auto-Create CRM Lead on Conversation', desc: 'Automatically parses name, email, budget, and creates a lead in Qualified stage' },
-                { key: 'enableRealtimeNotifications', label: '🔔 Real-time Platform Alerts', desc: 'Triggers notification toasts and badges when hot leads or contracts arrive' },
-                { key: 'autoEnrichWithApify', label: '🕷️ Auto-Enrich Leads with Apify', desc: 'Automatically crawls lead website on creation to enrich company data' },
-              ].map((item) => (
-                <label
-                  key={item.key}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 16,
-                    padding: 14,
-                    background: 'var(--bg-elevated)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!settings.automations?.[item.key]}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        automations: {
-                          ...settings.automations,
-                          [item.key]: e.target.checked,
-                        },
-                      })
-                    }
-                    style={{ width: 18, height: 18, marginTop: 3, accentColor: 'var(--primary)', flexShrink: 0 }}
-                  />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{item.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{item.desc}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 7: Environment Template */}
+        {/* Tab 6: Environment Reference */}
         {activeTab === 'env' && (
           <div className="card" style={{ padding: 28 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>📄 Environment Variables Reference</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-              Copy the configuration block below into your project <code style={{ background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: 4, fontSize: 12, color: 'var(--primary-light)' }}>.env.local</code> file:
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>📄 Environment Configuration Template</h3>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+              All variables used by the LeadAI Pro platform.
             </p>
 
-            <div style={{ position: 'relative' }}>
-              <pre
-                style={{
-                  background: 'var(--bg-input)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '18px 22px',
-                  fontSize: 13,
-                  color: '#a5f3fc',
-                  fontFamily: 'monospace',
-                  lineHeight: 1.8,
-                  overflowX: 'auto',
-                }}
-              >
+            <pre
+              style={{
+                background: '#0f172a',
+                color: '#38bdf8',
+                padding: 18,
+                borderRadius: 8,
+                fontSize: 13,
+                fontFamily: 'monospace',
+                lineHeight: 1.8,
+                overflowX: 'auto',
+              }}
+            >
 {`MONGODB_URI=mongodb://localhost:27017/ai-leads-platform
-OPENAI_API_KEY=${settings.openaiApiKey || 'your_openai_api_key_here'}
-OPENAI_MODEL=${settings.openaiModel || 'gpt-4o'}
-APIFY_API_TOKEN=${settings.apifyApiToken || 'your_apify_api_token_here'}
-RESEND_API_KEY=${settings.resendApiKey || 'your_resend_api_key_here'}
-EMAIL_FROM=${settings.resendFromEmail || 'onboarding@resend.dev'}
+OPENAI_API_KEY=sk-proj-your_openai_key
+OPENAI_MODEL=gpt-4o
+GOOGLE_MAPS_API_KEY=your_google_places_api_key
+APIFY_API_TOKEN=your_apify_token
+RESEND_API_KEY=re_your_resend_api_key
+EMAIL_FROM=onboarding@resend.dev
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME=${settings.companyName || 'LeadAI Pro'}
-JWT_SECRET=your_super_secret_jwt_key_leadai_pro_enterprise`}
-              </pre>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(`MONGODB_URI=mongodb://localhost:27017/ai-leads-platform
-OPENAI_API_KEY=${settings.openaiApiKey || 'your_openai_api_key_here'}
-OPENAI_MODEL=${settings.openaiModel || 'gpt-4o'}
-APIFY_API_TOKEN=${settings.apifyApiToken || 'your_apify_api_token_here'}
-RESEND_API_KEY=${settings.resendApiKey || 'your_resend_api_key_here'}
-EMAIL_FROM=${settings.resendFromEmail || 'onboarding@resend.dev'}
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME=${settings.companyName || 'LeadAI Pro'}
-JWT_SECRET=your_super_secret_jwt_key_leadai_pro_enterprise`);
-                  toast.success('Environment configuration copied!');
-                }}
-                className="btn btn-secondary btn-sm"
-                style={{ position: 'absolute', top: 12, right: 12, fontSize: 11 }}
-              >
-                📋 Copy
-              </button>
-            </div>
+JWT_SECRET=your_jwt_secret_key`}
+            </pre>
           </div>
         )}
       </div>

@@ -9,7 +9,8 @@ const MilestoneSchema = new mongoose.Schema({
 
 const ProposalSchema = new mongoose.Schema(
   {
-    leadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead', required: true },
+    organizationId: { type: String, default: 'org_default', index: true },
+    leadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead', required: true, index: true },
     proposalNumber: { type: String, unique: true },
 
     // Client Info
@@ -19,7 +20,10 @@ const ProposalSchema = new mongoose.Schema(
     clientCountry: { type: String, default: '' },
 
     // Proposal Content
+    proposalTitle: { type: String, default: 'Strategic Software & Digital Growth Proposal' },
     executiveSummary: { type: String, default: '' },
+    clientProblem: { type: String, default: '' },
+    recommendedSolution: { type: String, default: '' },
     businessGoals: { type: String, default: '' },
     projectScope: { type: String, default: '' },
     features: [{ type: String }],
@@ -27,6 +31,9 @@ const ProposalSchema = new mongoose.Schema(
     timeline: { type: String, default: '' },
     milestones: [MilestoneSchema],
     deliverables: [{ type: String }],
+    assumptions: { type: String, default: '' },
+    nextSteps: { type: String, default: '' },
+    aiReasoning: { type: String, default: '' },
 
     // Pricing
     pricing: {
@@ -43,24 +50,27 @@ const ProposalSchema = new mongoose.Schema(
     conclusion: { type: String, default: '' },
     validUntil: { type: Date },
 
+    // Approval Workflow Status
     status: {
       type: String,
-      enum: ['Draft', 'Sent', 'Viewed', 'Accepted', 'Rejected', 'Revised'],
+      enum: ['Draft', 'Approval Required', 'Approved', 'Rejected', 'Sent', 'Viewed', 'Accepted', 'Revised'],
       default: 'Draft',
+      index: true,
     },
-    sentAt: { type: Date },
-    viewedAt: { type: Date },
-    respondedAt: { type: Date },
+    approvedAt: { type: Date, default: null },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    sentAt: { type: Date, default: null },
+    viewedAt: { type: Date, default: null },
+    respondedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
 
-ProposalSchema.pre('save', async function (next) {
+ProposalSchema.pre('save', async function () {
   if (!this.proposalNumber) {
     const count = await mongoose.models.Proposal.countDocuments();
     this.proposalNumber = `PROP-${String(count + 1).padStart(5, '0')}`;
   }
-  next();
 });
 
 export default mongoose.models.Proposal || mongoose.model('Proposal', ProposalSchema);

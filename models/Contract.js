@@ -2,8 +2,10 @@ import mongoose from 'mongoose';
 
 const ContractSchema = new mongoose.Schema(
   {
-    leadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead', required: true },
+    organizationId: { type: String, default: 'org_default', index: true },
+    leadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead', required: true, index: true },
     contractNumber: { type: String, unique: true },
+    version: { type: Number, default: 1 },
 
     // Parties
     clientName: { type: String, required: true },
@@ -23,6 +25,7 @@ const ContractSchema = new mongoose.Schema(
     deliverables: [{ type: String }],
     startDate: { type: Date },
     endDate: { type: Date },
+    expiryDate: { type: Date },
 
     // Payment Terms
     totalAmount: { type: Number, default: 0 },
@@ -37,11 +40,14 @@ const ContractSchema = new mongoose.Schema(
     ],
 
     // Legal Clauses
+    responsibilities: { type: String, default: '' },
+    revisionPolicy: { type: String, default: '' },
     ownershipClause: { type: String, default: '' },
     confidentialityClause: { type: String, default: '' },
     supportClause: { type: String, default: '' },
     maintenanceClause: { type: String, default: '' },
     terminationClause: { type: String, default: '' },
+    disputeTerms: { type: String, default: '' },
     governingLaw: { type: String, default: '' },
 
     // Signatures
@@ -50,23 +56,29 @@ const ContractSchema = new mongoose.Schema(
     agencySignature: { type: String, default: '' },
     agencySignedAt: { type: Date },
 
+    // Approval Workflow Status
     status: {
       type: String,
-      enum: ['Draft', 'Sent', 'Under Review', 'Signed', 'Rejected', 'Terminated'],
+      enum: ['Draft', 'Approval Required', 'Approved', 'Rejected', 'Sent', 'Under Review', 'Signed', 'Terminated'],
       default: 'Draft',
+      index: true,
     },
+    approvedAt: { type: Date, default: null },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     sentAt: { type: Date },
     signedAt: { type: Date },
   },
   { timestamps: true }
 );
 
-ContractSchema.pre('save', async function (next) {
+ContractSchema.pre('save', async function () {
   if (!this.contractNumber) {
     const count = await mongoose.models.Contract.countDocuments();
     this.contractNumber = `CON-${String(count + 1).padStart(5, '0')}`;
   }
-  next();
+  if (!this.expiryDate) {
+    this.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  }
 });
 
 export default mongoose.models.Contract || mongoose.model('Contract', ContractSchema);

@@ -1,27 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { StatCard, Spinner, EmptyState } from '@/components/ui/index';
+import { StatCard, Spinner, LeadScoreBadge } from '@/components/ui/index';
 import Link from 'next/link';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
-
-const PIPELINE_COLORS = {
-  'New Lead': '#6366f1',
-  Qualified: '#06b6d4',
-  'Proposal Sent': '#f59e0b',
-  'Meeting Scheduled': '#8b5cf6',
-  Negotiation: '#f97316',
-  'Contract Signed': '#10b981',
-  'Invoice Sent': '#3b82f6',
-  'Payment Received': '#059669',
-  Completed: '#047857',
-  Lost: '#ef4444',
-};
-
-const PIE_COLORS = ['#0052ff', '#7c3aed', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#f97316', '#3b82f6'];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -29,7 +14,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 60000);
+    const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -53,7 +38,7 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
           <div style={{ textAlign: 'center' }}>
             <Spinner size={40} />
-            <p style={{ marginTop: 16, color: 'var(--text-muted)' }}>Aggregating CRM metrics & pipeline data...</p>
+            <p style={{ marginTop: 16, color: '#64748b' }}>Aggregating CRM metrics & pipeline data...</p>
           </div>
         </div>
       </AppLayout>
@@ -61,378 +46,271 @@ export default function DashboardPage() {
   }
 
   const s = stats?.stats || {};
-  const pipelineData = (stats?.leadsByStatus || []).map((d) => ({
-    name: d._id,
-    value: d.count,
-    color: PIPELINE_COLORS[d._id] || '#0052ff',
-  }));
-  const industryData = (stats?.leadsByIndustry || []).slice(0, 6).map((d) => ({ name: d._id, count: d.count }));
-  const countryData = (stats?.leadsByCountry || []).slice(0, 6);
-  const monthlyTrend = stats?.monthlyTrend || [
-    { name: 'Jan', leads: 12, revenue: 14500 },
-    { name: 'Feb', leads: 19, revenue: 24000 },
-    { name: 'Mar', leads: 28, revenue: 38500 },
-    { name: 'Apr', leads: 34, revenue: 49000 },
-    { name: 'May', leads: 48, revenue: 67000 },
-  ];
+  const funnelData = stats?.conversionFunnel || [];
+  const monthlyTrend = stats?.monthlyTrend || [];
+  const qualityData = stats?.leadsByQuality || [];
+  const sourceData = stats?.leadsBySource || [];
+  const recentLeads = stats?.recentLeads || [];
+  const pendingApprovals = s.pendingApprovals || 0;
 
   return (
-    <AppLayout title="Executive Dashboard" subtitle="AI-driven lead generation & sales automation pipeline">
-      {/* Quick Action Banner */}
+    <AppLayout title="Executive Dashboard" subtitle="Real-time B2B sales automation & pipeline intelligence">
+      {/* Pending Approvals Notice Banner */}
+      {pendingApprovals > 0 && (
+        <div
+          style={{
+            background: '#fffbeb',
+            border: '1px solid #fef3c7',
+            borderRadius: 8,
+            padding: '12px 18px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 10,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>🛡️</span>
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>
+                {pendingApprovals} Items Awaiting Human Authorization
+              </span>
+              <span style={{ fontSize: 12, color: '#b45309', marginLeft: 8 }}>
+                AI has prepared outreach drafts and proposals waiting for your review.
+              </span>
+            </div>
+          </div>
+          <Link href="/approvals" className="btn btn-primary btn-sm" style={{ background: '#d97706', borderColor: '#d97706' }}>
+            Open Approval Center →
+          </Link>
+        </div>
+      )}
+
+      {/* Top 4 Core Metrics */}
       <div
-        className="card"
         style={{
-          padding: '18px 24px',
-          marginBottom: 24,
-          background: 'linear-gradient(135deg, rgba(0,82,255,0.06), rgba(124,58,237,0.06))',
-          border: '1px solid rgba(0,82,255,0.18)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 12,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 16,
+          marginBottom: 16,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              background: 'var(--gradient-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 22,
-            }}
-          >
-            🤖
+        <StatCard
+          icon="👥"
+          label="Total Leads"
+          value={s.totalLeads || 0}
+          subtext={`+${s.todayLeads || 0} discovered today`}
+          trend="up"
+        />
+        <StatCard
+          icon="🔥"
+          label="Hot Prospects"
+          value={s.hotLeads || 0}
+          subtext="Score 80-100 high commercial intent"
+          trend="up"
+        />
+        <StatCard
+          icon="✉️"
+          label="Outreach Sent"
+          value={s.emailsSent || 0}
+          subtext={`${s.replies || 0} replies (${s.replyRate || 0}% rate)`}
+          trend="neutral"
+        />
+        <StatCard
+          icon="💰"
+          label="Pipeline Value"
+          value={`$${(s.pipelineValue || 0).toLocaleString()}`}
+          subtext={`$${(s.revenue || 0).toLocaleString()} closed/signed`}
+          trend="up"
+        />
+      </div>
+
+      {/* Secondary 4 KPI Strip */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+          gap: 12,
+          marginBottom: 24,
+        }}
+      >
+        <div className="card" style={{ padding: '12px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+            Interested Leads
           </div>
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>AI Sales Consultant Active</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-              Automatically qualifying leads, estimating project budgets, and generating executive proposals.
-            </p>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#059669', marginTop: 2 }}>
+            {s.interestedLeads || 0}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Link href="/chat" className="btn btn-primary btn-sm">
-            🤖 Test AI Consultant
-          </Link>
-          <Link href="/estimator" className="btn btn-secondary btn-sm">
-            🧮 Project Estimator
-          </Link>
-          <Link href="/audit" className="btn btn-secondary btn-sm">
-            🔍 Audit Website
-          </Link>
-          <Link href="/automation" className="btn btn-secondary btn-sm">
-            ⚡ Automation & Apify
-          </Link>
-          <Link href="/pipeline" className="btn btn-secondary btn-sm">
-            📊 Kanban Board
-          </Link>
+
+        <div className="card" style={{ padding: '12px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+            Client Reply Rate
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#2563eb', marginTop: 2 }}>
+            {s.replyRate || 0}%
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: '12px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+            Proposals & Contracts
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#7c3aed', marginTop: 2 }}>
+            {(s.proposalsCount || 0) + (s.contractsCount || 0)}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: '12px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+            Follow-ups Pending
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#d97706', marginTop: 2 }}>
+            {s.followUpsPending || 0}
+          </div>
         </div>
       </div>
 
-      {/* Primary KPI Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 18, marginBottom: 28 }}>
-        <StatCard icon="👥" label="Total Leads" value={s.totalLeads || 0} sub="All time captured" gradient="linear-gradient(135deg,#0052ff,#7c3aed)" />
-        <StatCard icon="🆕" label="Today's Leads" value={s.todayLeads || 0} sub="Last 24 hours" gradient="linear-gradient(135deg,#06b6d4,#0052ff)" />
-        <StatCard icon="🔥" label="Hot Leads" value={s.hotLeads || 0} sub="Score 75+" gradient="linear-gradient(135deg,#ef4444,#f59e0b)" />
-        <StatCard icon="⚡" label="Warm Leads" value={s.warmLeads || 0} sub="Score 45-74" gradient="linear-gradient(135deg,#f59e0b,#10b981)" />
-        <StatCard icon="📅" label="Pending Meetings" value={s.pendingMeetings || 0} sub="Scheduled calls" gradient="linear-gradient(135deg,#8b5cf6,#ec4899)" />
-        <StatCard icon="💰" label="Revenue Collected" value={`$${((s.totalRevenuePaid || 0) / 1000).toFixed(1)}k`} sub="From paid invoices" gradient="linear-gradient(135deg,#10b981,#06b6d4)" />
-        <StatCard icon="📈" label="Revenue Forecast" value={`$${((s.revenueForecast || 0) / 1000).toFixed(0)}k`} sub="Weighted pipeline" gradient="linear-gradient(135deg,#0052ff,#10b981)" />
-      </div>
-
-      {/* Charts Section */}
+      {/* Main Charts Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 24 }}>
-        {/* Pipeline & Revenue Trend */}
-        <div className="card" style={{ padding: 24 }}>
-          <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        {/* Conversion Funnel */}
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Sales Pipeline Stage Breakdown</h3>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Distribution of leads across sales stages</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                Sales Conversion Funnel
+              </h3>
+              <div style={{ fontSize: 12, color: '#64748b' }}>From Discovery to Closed Deal</div>
             </div>
-            <Link href="/pipeline" className="btn btn-secondary btn-sm">
-              Open Kanban Pipeline →
+            <Link href="/pipeline" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>
+              View Kanban →
             </Link>
           </div>
 
-          {pipelineData.length === 0 ? (
-            <EmptyState icon="📊" title="Pipeline ready" description="Leads qualified by the AI assistant will populate here" />
-          ) : (
-            <ResponsiveContainer width="100%" height={230}>
-              <BarChart data={pipelineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12 }} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {pipelineData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Bar>
+          <div style={{ height: 260 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
+                <XAxis type="number" tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis dataKey="stage" type="category" tick={{ fill: '#0f172a', fontSize: 11 }} width={90} />
+                <Tooltip
+                  formatter={(val) => [`${val} prospects`, 'Volume']}
+                  contentStyle={{ background: '#0f172a', color: 'white', borderRadius: 8, fontSize: 12, border: 'none' }}
+                />
+                <Bar dataKey="count" fill="#2563eb" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          )}
-        </div>
-
-        {/* Lead Quality Breakdown */}
-        <div className="card" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Lead Qualification</h3>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Quality distribution (0 - 100)</p>
-
-          <ResponsiveContainer width="100%" height={160}>
-            <PieChart>
-              <Pie
-                data={[
-                  { name: 'Hot 🔥', value: s.hotLeads || 1 },
-                  { name: 'Warm ⚡', value: s.warmLeads || 1 },
-                  { name: 'Cold ❄️', value: s.coldLeads || 1 },
-                ]}
-                cx="50%"
-                cy="50%"
-                innerRadius={45}
-                outerRadius={70}
-                paddingAngle={4}
-                dataKey="value"
-              >
-                {['#ef4444', '#f59e0b', '#3b82f6'].map((color, i) => (
-                  <Cell key={i} fill={color} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
-            </PieChart>
-          </ResponsiveContainer>
-
-          <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 8 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#ef4444' }}>{s.hotLeads || 0}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>🔥 Hot</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#f59e0b' }}>{s.warmLeads || 0}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>⚡ Warm</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#3b82f6' }}>{s.coldLeads || 0}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>❄️ Cold</div>
-            </div>
           </div>
         </div>
-      </div>
 
-      {/* Industries & Countries Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-        {/* Top Industries */}
-        <div className="card" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Top Industries</h3>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Highest lead volume sectors</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {industryData.map((d, i) => (
-              <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: 6,
-                    background: `${PIE_COLORS[i % PIE_COLORS.length]}20`,
-                    color: PIE_COLORS[i % PIE_COLORS.length],
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
+        {/* Lead Quality Distribution */}
+        <div className="card" style={{ padding: 20 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
+            Prospect Quality Rating
+          </h3>
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 14 }}>Based on 0-100 Digital Scoring</div>
+
+          <div style={{ height: 180 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={qualityData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={75}
+                  paddingAngle={4}
+                  dataKey="count"
                 >
-                  #{i + 1}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{d.name}</span>
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{d.count} leads</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill progress-primary" style={{ width: `${(d.count / (industryData[0]?.count || 1)) * 100}%` }} />
-                  </div>
-                </div>
-              </div>
-            ))}
+                  {qualityData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: '#0f172a', color: 'white', borderRadius: 8, fontSize: 12, border: 'none' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-        </div>
 
-        {/* Top Countries */}
-        <div className="card" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Top Countries</h3>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Lead origin by geography</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {countryData.map((d, i) => (
-              <div key={d._id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 18, flexShrink: 0 }}>🌍</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{d._id}</span>
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{d.count} leads</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${(d.count / (countryData[0]?.count || 1)) * 100}%`, background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div style={{ display: 'flex', justifyContent: 'space-around', fontSize: 11, fontWeight: 600, marginTop: 8 }}>
+            <span style={{ color: '#dc2626' }}>● Hot ({s.hotLeads || 0})</span>
+            <span style={{ color: '#d97706' }}>● Warm ({s.warmLeads || 0})</span>
+            <span style={{ color: '#2563eb' }}>● Cold ({s.coldLeads || 0})</span>
           </div>
         </div>
       </div>
 
-      {/* Recent Leads & Activity */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
-        {/* Recent Leads Table */}
-        <div className="card" style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Latest Qualified Leads</h3>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Real-time prospects generated by AI Consultant</p>
-            </div>
-            <Link href="/leads" className="btn btn-secondary btn-sm">
+      {/* Trend Area Chart & Recent Discovered Leads */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 20, marginBottom: 24 }}>
+        {/* Monthly Trend */}
+        <div className="card" style={{ padding: 20 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
+            Monthly Lead Volume Trend
+          </h3>
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>Last 6 Months Discovery Rate</div>
+
+          <div style={{ height: 230 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{ background: '#0f172a', color: 'white', borderRadius: 8, fontSize: 12, border: 'none' }}
+                />
+                <Area type="monotone" dataKey="leads" stroke="#2563eb" fillOpacity={1} fill="url(#colorLeads)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Recent Discovered Leads */}
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: 0 }}>
+              Recent Discovered Leads
+            </h3>
+            <Link href="/leads" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>
               All Leads →
             </Link>
           </div>
 
-          {!stats?.recentLeads || stats.recentLeads.length === 0 ? (
-            <EmptyState
-              icon="👥"
-              title="No leads yet"
-              description="Test the AI Consultant to qualify and add your first lead"
-              action={
-                <Link href="/chat" className="btn btn-primary btn-sm">
-                  Launch AI Consultant →
-                </Link>
-              }
-            />
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Lead Name</th>
-                    <th>Industry</th>
-                    <th>Project</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.recentLeads.map((lead) => (
-                    <tr key={lead._id} style={{ cursor: 'pointer' }} onClick={() => (window.location.href = `/leads/${lead._id}`)}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div
-                            style={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: '50%',
-                              background: 'var(--gradient-primary)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: 'white',
-                              flexShrink: 0,
-                            }}
-                          >
-                            {lead.name?.[0] || 'L'}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{lead.name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lead.company || lead.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{lead.businessType}</td>
-                      <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{lead.projectType}</td>
-                      <td>
-                        <span
-                          style={{
-                            fontWeight: 800,
-                            color: lead.leadScore >= 75 ? '#ef4444' : lead.leadScore >= 45 ? '#f59e0b' : '#3b82f6',
-                            fontSize: 13,
-                          }}
-                        >
-                          {lead.leadScore}/100
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            lead.leadStatus === 'Hot' ? 'badge-hot' : lead.leadStatus === 'Warm' ? 'badge-warm' : 'badge-cold'
-                          }`}
-                        >
-                          {lead.leadStatus === 'Hot' ? '🔥' : lead.leadStatus === 'Warm' ? '⚡' : '❄️'} {lead.leadStatus}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(lead.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Upcoming Meetings & Activity Feed */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Upcoming Calls */}
-          <div className="card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Upcoming Calls</h3>
-              <Link href="/meetings" className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                Calendar →
-              </Link>
-            </div>
-            {!stats?.upcomingCalls || stats.upcomingCalls.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No calls scheduled for today</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {stats.upcomingCalls.map((call) => (
-                  <div
-                    key={call._id}
-                    style={{
-                      padding: '10px 12px',
-                      background: 'var(--bg-elevated)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border)',
-                    }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {recentLeads.slice(0, 5).map((lead) => (
+              <div
+                key={lead._id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 10px',
+                  borderRadius: 6,
+                  border: '1px solid #f1f5f9',
+                  background: '#f8fafc',
+                }}
+              >
+                <div>
+                  <Link
+                    href={`/leads/${lead._id}`}
+                    style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{call.title}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                      📅 {new Date(call.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {call.leadId?.name || 'Prospect'}
-                    </div>
+                    {lead.companyName || lead.company || lead.name}
+                  </Link>
+                  <div style={{ fontSize: 11, color: '#64748b' }}>
+                    {lead.industry || 'Business'} {lead.city ? `· ${lead.city}` : ''}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
 
-          {/* Activity Log */}
-          <div className="card" style={{ padding: 20, flex: 1 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14 }}>Real-Time Activity</h3>
-            {!stats?.recentActivities || stats.recentActivities.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>System activity stream will appear here</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 240, overflowY: 'auto' }}>
-                {stats.recentActivities.slice(0, 5).map((act) => (
-                  <div key={act._id} style={{ fontSize: 12, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
-                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{act.title}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
-                      {act.description} · {new Date(act.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                ))}
+                <LeadScoreBadge score={lead.leadScore} status={lead.leadStatus} />
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>

@@ -51,7 +51,7 @@ const InvoiceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-InvoiceSchema.pre('save', async function (next) {
+InvoiceSchema.pre('save', async function () {
   if (!this.invoiceNumber) {
     const count = (await mongoose.models.Invoice?.countDocuments()) || 0;
     this.invoiceNumber = `INV-${String(count + 1).padStart(5, '0')}`;
@@ -61,7 +61,6 @@ InvoiceSchema.pre('save', async function (next) {
     this.status = 'Paid';
     if (!this.paidAt) this.paidAt = new Date();
   }
-  next();
 });
 
 export default mongoose.models.Invoice || mongoose.model('Invoice', InvoiceSchema);

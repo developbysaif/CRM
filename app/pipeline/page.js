@@ -1,258 +1,345 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { Spinner, PipelineBadge } from '@/components/ui/index';
+import { Spinner, LeadScoreBadge } from '@/components/ui/index';
+import { toast } from '@/components/ui/Toaster';
 import Link from 'next/link';
 
-const STAGES = [
-  'New Lead',
-  'Qualified',
-  'Proposal Sent',
-  'Meeting Scheduled',
-  'Negotiation',
-  'Contract Signed',
-  'Invoice Sent',
-  'Payment Received',
-  'Completed',
+export const PIPELINE_STAGES = [
+  { id: 'New Lead', color: '#64748b' },
+  { id: 'Qualified', color: '#0284c7' },
+  { id: 'Contacted', color: '#2563eb' },
+  { id: 'Replied', color: '#8b5cf6' },
+  { id: 'Interested', color: '#059669' },
+  { id: 'Meeting', color: '#0d9488' },
+  { id: 'Proposal Sent', color: '#d97706' },
+  { id: 'Negotiation', color: '#ea580c' },
+  { id: 'Closed Won', color: '#16a34a' },
+  { id: 'Contract Sent', color: '#4f46e5' },
+  { id: 'Contract Signed', color: '#15803d' },
+  { id: 'Payment Pending', color: '#ca8a04' },
+  { id: 'Paid', color: '#166534' },
+  { id: 'Completed', color: '#0f766e' },
+  { id: 'Closed Lost', color: '#dc2626' },
+  { id: 'Do Not Contact', color: '#991b1b' },
 ];
-
-const STAGE_HEADER_COLORS = {
-  'New Lead': '#6366f1',
-  Qualified: '#06b6d4',
-  'Proposal Sent': '#f59e0b',
-  'Meeting Scheduled': '#8b5cf6',
-  Negotiation: '#f97316',
-  'Contract Signed': '#10b981',
-  'Invoice Sent': '#3b82f6',
-  'Payment Received': '#059669',
-  Completed: '#047857',
-};
 
 export default function PipelinePage() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedIndustry, setSelectedIndustry] = useState('all');
+  const [draggedLeadId, setDraggedLeadId] = useState(null);
+  const [dragOverStage, setDragOverStage] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
 
-  useEffect(() => {
-    fetchLeads();
-  }, []);
-
-  async function fetchLeads() {
+  const fetchLeads = useCallback(async () => {
     try {
-      const res = await fetch('/api/leads?limit=200');
-      if (res.ok) {
-        const data = await res.json();
-        setLeads(data.data?.leads || []);
+      const res = await fetch('/api/leads?limit=300');
+      const data = await res.json();
+      if (data.success) {
+        setLeads(data.data.leads || []);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.error('Failed to load pipeline leads');
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
 
   async function updateLeadStage(leadId, newStage) {
+    if (!leadId || !newStage) return;
+    const targetLead = leads.find((l) => l._id === leadId);
+    if (!targetLead || targetLead.pipelineStatus === newStage) return;
+
+    // Optimistic UI update
+    setLeads((prev) =>
+      prev.map((l) => (l._id === leadId ? { ...l, pipelineStatus: newStage } : l))
+    );
     setUpdatingId(leadId);
+
     try {
       const res = await fetch(`/api/leads/${leadId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pipelineStatus: newStage }),
       });
-      if (res.ok) {
-        setLeads((prev) =>
-          prev.map((l) => (l._id === leadId ? { ...l, pipelineStatus: newStage } : l))
-        );
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Moved to ${newStage}`);
+        if (newStage === 'Interested') {
+          toast.success('🤖 AI Proposal Draft automatically queued in Approval Center');
+        } else if (newStage === 'Closed Won') {
+          toast.success('📝 Contract automatically generated! Check Owner Notification');
+        }
+      } else {
+        toast.error(data.message || 'Stage update failed');
+        fetchLeads(); // Revert
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.error('Network error updating stage');
+      fetchLeads(); // Revert
     } finally {
       setUpdatingId(null);
     }
   }
 
+  // Drag Handlers
+  function onDragStart(e, leadId) {
+    e.dataTransfer.setData('text/plain', leadId);
+    setDraggedLeadId(leadId);
+  }
+
+  function onDragOver(e, stageId) {
+    e.preventDefault();
+    setDragOverStage(stageId);
+  }
+
+  function onDragLeave() {
+    setDragOverStage(null);
+  }
+
+  function onDrop(e, targetStage) {
+    e.preventDefault();
+    const leadId = e.dataTransfer.getData('text/plain') || draggedLeadId;
+    setDragOverStage(null);
+    setDraggedLeadId(null);
+    if (leadId) {
+      updateLeadStage(leadId, targetStage);
+    }
+  }
+
   const filteredLeads = leads.filter((lead) => {
-    const matchesSearch =
-      !search ||
-      (lead.name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (lead.company || '').toLowerCase().includes(search.toLowerCase()) ||
-      (lead.projectType || '').toLowerCase().includes(search.toLowerCase());
-    const matchesIndustry = selectedIndustry === 'all' || lead.businessType === selectedIndustry;
-    return matchesSearch && matchesIndustry;
+    if (!search) return true;
+    const term = search.toLowerCase();
+    return (
+      (lead.companyName || lead.company || '').toLowerCase().includes(term) ||
+      (lead.name || '').toLowerCase().includes(term) ||
+      (lead.industry || '').toLowerCase().includes(term) ||
+      (lead.city || '').toLowerCase().includes(term)
+    );
   });
 
-  const industries = ['all', ...new Set(leads.map((l) => l.businessType).filter(Boolean))];
-
   return (
-    <AppLayout title="Sales Pipeline" subtitle="Visual 9-stage Kanban deal tracking">
-      {/* Filters & Actions */}
+    <AppLayout
+      title="14-Stage Kanban Sales Pipeline"
+      subtitle="Drag and drop leads through the complete qualification, proposal, negotiation, contract, and payment lifecycle"
+    >
+      {/* Top Filter Bar */}
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 20,
+          justifyContent: 'space-between',
+          marginBottom: 16,
           flexWrap: 'wrap',
           gap: 12,
         }}
       >
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <input
             className="input"
-            style={{ width: 220, padding: '8px 14px' }}
-            placeholder="Search leads..."
+            style={{ width: 280, fontSize: 13, padding: '7px 12px' }}
+            placeholder="Filter pipeline leads..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-
-          <select
-            className="input"
-            style={{ width: 180, padding: '8px 14px' }}
-            value={selectedIndustry}
-            onChange={(e) => setSelectedIndustry(e.target.value)}
-          >
-            {industries.map((ind) => (
-              <option key={ind} value={ind}>
-                {ind === 'all' ? 'All Industries' : ind}
-              </option>
-            ))}
-          </select>
+          <span style={{ fontSize: 12, color: '#64748b' }}>
+            Showing <strong>{filteredLeads.length}</strong> active opportunities
+          </span>
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
-          <Link href="/leads" className="btn btn-secondary btn-sm">
-            📄 Table View
+          <Link href="/discovery" className="btn btn-secondary btn-sm">
+            🎯 + Discover Leads
           </Link>
-          <Link href="/chat" className="btn btn-primary btn-sm">
-            🤖 Qualify New Lead
+          <Link href="/approvals" className="btn btn-primary btn-sm">
+            🛡️ View Approvals
           </Link>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
           <Spinner size={36} />
         </div>
       ) : (
-        <div className="kanban-board">
-          {STAGES.map((stage) => {
-            const stageLeads = filteredLeads.filter((l) => (l.pipelineStatus || 'New Lead') === stage);
-            const totalValue = stageLeads.reduce((acc, curr) => acc + (curr.budget?.max || curr.budget?.min || 10000), 0);
-            const stageColor = STAGE_HEADER_COLORS[stage] || '#0052ff';
+        /* Kanban Board Horizontal Scroll Container */
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            overflowX: 'auto',
+            paddingBottom: 24,
+            minHeight: '75vh',
+            alignItems: 'flex-start',
+          }}
+        >
+          {PIPELINE_STAGES.map((stage) => {
+            const columnLeads = filteredLeads.filter((l) => l.pipelineStatus === stage.id);
+            const isOver = dragOverStage === stage.id;
 
             return (
-              <div key={stage} className="kanban-column" style={{ minWidth: 280, maxWidth: 280 }}>
+              <div
+                key={stage.id}
+                onDragOver={(e) => onDragOver(e, stage.id)}
+                onDragLeave={onDragLeave}
+                onDrop={(e) => onDrop(e, stage.id)}
+                style={{
+                  minWidth: 260,
+                  maxWidth: 280,
+                  flex: '0 0 260px',
+                  background: isOver ? '#f1f5f9' : '#f8fafc',
+                  border: isOver ? '2px dashed #2563eb' : '1px solid #e2e8f0',
+                  borderRadius: 10,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  maxHeight: 'calc(100vh - 180px)',
+                  transition: 'background 0.15s ease',
+                }}
+              >
                 {/* Column Header */}
                 <div
-                  className="kanban-header"
                   style={{
-                    borderTop: `3px solid ${stageColor}`,
-                    background: 'var(--bg-card)',
+                    padding: '12px 14px',
+                    borderBottom: '1px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: '#ffffff',
+                    borderTopLeftRadius: 10,
+                    borderTopRightRadius: 10,
                   }}
                 >
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{stage}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      ${(totalValue / 1000).toFixed(0)}k est. value
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: stage.color,
+                      }}
+                    />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                      {stage.id}
+                    </span>
                   </div>
+
                   <span
                     style={{
-                      background: `${stageColor}20`,
-                      color: stageColor,
                       fontSize: 11,
                       fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: 'var(--radius-full)',
+                      padding: '2px 7px',
+                      borderRadius: 10,
+                      background: '#f1f5f9',
+                      color: '#475569',
                     }}
                   >
-                    {stageLeads.length}
+                    {columnLeads.length}
                   </span>
                 </div>
 
-                {/* Column Cards */}
-                <div className="kanban-body">
-                  {stageLeads.length === 0 ? (
+                {/* Column Cards List */}
+                <div
+                  style={{
+                    padding: 10,
+                    overflowY: 'auto',
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}
+                >
+                  {columnLeads.length === 0 ? (
                     <div
                       style={{
-                        padding: '30px 16px',
+                        padding: '24px 10px',
                         textAlign: 'center',
-                        color: 'var(--text-muted)',
                         fontSize: 12,
-                        border: '1px dashed var(--border)',
-                        borderRadius: 'var(--radius-md)',
+                        color: '#94a3b8',
                       }}
                     >
-                      No deals in {stage}
+                      Drop leads here
                     </div>
                   ) : (
-                    stageLeads.map((lead) => (
-                      <div key={lead._id} className="kanban-card">
+                    columnLeads.map((lead) => (
+                      <div
+                        key={lead._id}
+                        draggable
+                        onDragStart={(e) => onDragStart(e, lead._id)}
+                        className="card"
+                        style={{
+                          padding: 12,
+                          background: '#ffffff',
+                          cursor: 'grab',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                          border: updatingId === lead._id ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+                          opacity: draggedLeadId === lead._id ? 0.4 : 1,
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                           <Link
                             href={`/leads/${lead._id}`}
                             style={{
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: 700,
-                              color: 'var(--text-primary)',
+                              color: '#0f172a',
                               textDecoration: 'none',
+                              lineHeight: 1.3,
                             }}
                           >
-                            {lead.name}
+                            {lead.companyName || lead.company || lead.name}
                           </Link>
-                          <span
+
+                          <LeadScoreBadge score={lead.leadScore} status={lead.leadStatus} />
+                        </div>
+
+                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6 }}>
+                          {lead.name} {lead.city ? `· ${lead.city}` : ''}
+                        </div>
+
+                        {/* Why valuable snippet */}
+                        {lead.whyValuable && (
+                          <div
                             style={{
                               fontSize: 11,
-                              fontWeight: 800,
-                              color: lead.leadScore >= 75 ? '#ef4444' : lead.leadScore >= 45 ? '#f59e0b' : '#3b82f6',
-                            }}
-                          >
-                            {lead.leadScore} pts
-                          </span>
-                        </div>
-
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
-                          {lead.company ? `${lead.company} · ` : ''}
-                          {lead.projectType || 'Software'}
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#10b981' }}>
-                            {lead.budget?.raw || '$15,000'}
-                          </span>
-                          <span className="badge badge-primary" style={{ fontSize: 9 }}>
-                            {lead.businessType}
-                          </span>
-                        </div>
-
-                        {/* Stage Mover Selector */}
-                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 4 }}>
-                          <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
-                            Move stage:
-                          </label>
-                          <select
-                            disabled={updatingId === lead._id}
-                            value={lead.pipelineStatus || 'New Lead'}
-                            onChange={(e) => updateLeadStage(lead._id, e.target.value)}
-                            style={{
-                              width: '100%',
+                              color: '#475569',
+                              lineHeight: 1.3,
+                              background: '#f8fafc',
                               padding: '4px 6px',
-                              fontSize: 11,
-                              background: 'var(--bg-input)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 'var(--radius-sm)',
-                              color: 'var(--text-primary)',
-                              outline: 'none',
+                              borderRadius: 4,
+                              marginBottom: 8,
                             }}
                           >
-                            {STAGES.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
+                            {lead.whyValuable.slice(0, 85)}...
+                          </div>
+                        )}
+
+                        {/* Bottom Actions */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            borderTop: '1px solid #f1f5f9',
+                            paddingTop: 8,
+                            fontSize: 11,
+                          }}
+                        >
+                          <span style={{ color: '#94a3b8' }}>
+                            {lead.website ? '🌐 Web' : '🚫 No Web'}
+                          </span>
+
+                          <Link
+                            href={`/leads/${lead._id}`}
+                            style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}
+                          >
+                            Profile →
+                          </Link>
                         </div>
                       </div>
                     ))

@@ -43,12 +43,11 @@ const QuotationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-QuotationSchema.pre('save', async function (next) {
+QuotationSchema.pre('save', async function () {
   if (!this.quotationNumber) {
     const count = await mongoose.models.Quotation.countDocuments();
     this.quotationNumber = `QUO-${String(count + 1).padStart(5, '0')}`;
   }
-  next();
 });
 
 export default mongoose.models.Quotation || mongoose.model('Quotation', QuotationSchema);
