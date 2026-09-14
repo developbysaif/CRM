@@ -22,206 +22,242 @@ import {
   Building2,
   Lock,
   ArrowUpRight,
+  Activity,
+  Check,
+  Send,
+  Eye,
+  Sliders,
+  Scale,
+  RefreshCw,
+  Globe,
+  Database,
+  BarChart3,
+  Calendar,
 } from 'lucide-react';
 
-const mockDemoResults = {
-  Restaurant: {
+const demoCases = {
+  restaurant: {
+    sector: 'Restaurant & Hospitality',
     name: 'The Crown Tavern & Kitchen',
-    location: 'London, UK',
+    location: 'Covent Garden, London',
     rating: 4.8,
     reviews: 64,
     score: 88,
-    status: 'Hot',
+    badge: 'Hot Lead',
     websiteStatus: 'Missing Website',
-    whyValuable: 'High 4.8★ customer rating with zero official web footprint. Prime candidate for modern reservations site.',
+    signals: ['4.8★ Google Rating', '64 Diner Reviews', 'No Direct Booking', 'High Commercial Density'],
+    whyValuable: 'High 4.8★ customer rating with zero official web footprint. Prime candidate for custom reservations site & online menus.',
     subject: 'Modern digital menu and reservations platform for The Crown Tavern',
+    body: 'Hi there, we noticed The Crown Tavern holds an impressive 4.8-star reputation across 64 diners on Google, yet diners cannot reserve directly online. We built a prototype reservations experience for your location...',
+    deliverables: ['Custom Mobile-First Website', 'Table Reservation Engine', 'Local SEO & Google Maps Sync'],
   },
-  Dental: {
+  dental: {
+    sector: 'Cosmetic Healthcare',
     name: 'Harley Street Smile Clinic',
-    location: 'London, UK',
+    location: 'Westminster, London',
     rating: 4.9,
     reviews: 142,
-    score: 92,
-    status: 'Hot',
-    websiteStatus: 'Outdated / Slow Mobile',
-    whyValuable: 'High-ticket cosmetic dentistry with 2.8s mobile load time. Missing online booking engine.',
-    subject: 'Accelerating patient bookings for Harley Street Smile Clinic',
+    score: 94,
+    badge: 'Hot Lead',
+    websiteStatus: 'Outdated & Slow Mobile',
+    signals: ['4.9★ Google Rating', '142 Patient Reviews', '3.4s Mobile Load', 'High-Ticket Treatments'],
+    whyValuable: 'High-ticket cosmetic dentistry with 3.4s mobile load time. Missing instant online consultation scheduler.',
+    subject: 'Accelerating patient consultation bookings for Harley Street Smile Clinic',
+    body: 'Hello, your patient reviews on Google are stellar (4.9★ across 142 patients). However, mobile visitors currently experience a 3.4s load delay before booking a consultation. Here is our audit breakdown...',
+    deliverables: ['Core Web Vitals Optimization', 'Self-Service Booking Widget', 'Automated SMS Reminders'],
   },
-  SaaS: {
+  saas: {
+    sector: 'Enterprise B2B Cloud',
     name: 'CloudSync Infrastructure',
-    location: 'San Francisco, CA',
+    location: 'Financial District, San Francisco',
     rating: 4.6,
     reviews: 38,
     score: 79,
-    status: 'Warm',
-    websiteStatus: 'Poor SEO Structure',
-    whyValuable: 'Growing B2B cloud tool with organic search visibility deficit against competitors.',
-    subject: 'SEO architecture & conversion rate optimization for CloudSync',
+    badge: 'Warm Lead',
+    websiteStatus: 'Organic SEO Deficit',
+    signals: ['4.6★ G2/Google Reviews', '38 Reviews', 'Domain Rank 24', 'Competitor Keyword Gap'],
+    whyValuable: 'Growing B2B cloud tool with organic search visibility deficit against competitors in their category.',
+    subject: 'Organic SEO architecture & conversion rate audit for CloudSync',
+    body: 'Hi CloudSync team, our automated competitor audit identified that 3 of your direct category rivals are outranking you for 42 high-intent cloud keywords. We prepared a technical gap analysis...',
+    deliverables: ['Keyword Architecture Refactor', 'Landing Page A/B Strategy', 'Executive Comparison Deck'],
   },
 };
 
 export default function HomePage() {
-  const [selectedIndustry, setSelectedIndustry] = useState('Restaurant');
-  const [isScanning, setIsScanning] = useState(false);
-  const activeLead = mockDemoResults[selectedIndustry] || mockDemoResults.Restaurant;
+  const [activeTab, setActiveTab] = useState('restaurant');
+  const [approvedState, setApprovedState] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
 
-  const handleSimulateScan = (industry) => {
-    setIsScanning(true);
-    setSelectedIndustry(industry);
-    setTimeout(() => {
-      setIsScanning(false);
-    }, 350);
+  const activeDemo = demoCases[activeTab] || demoCases.restaurant;
+
+  const handleTabChange = (key) => {
+    setIsSwitching(true);
+    setActiveTab(key);
+    setApprovedState(false);
+    setTimeout(() => setIsSwitching(false), 200);
+  };
+
+  const handleSimulateApprove = () => {
+    setApprovedState(true);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#080f25] text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans selection:bg-blue-600 selection:text-white">
-      {/* Top Notice Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 text-white text-center py-2.5 px-4 text-xs font-medium flex items-center justify-center gap-2 border-b border-white/10">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#060b1e] text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans selection:bg-blue-600 selection:text-white relative overflow-hidden">
+      {/* Background Decorative Grid & Glows */}
+      <div className="absolute inset-0 bg-grid-pattern-light dark:bg-grid-pattern opacity-40 pointer-events-none -z-10" />
+      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-tr from-blue-600/20 via-indigo-600/15 to-purple-600/20 blur-[140px] pointer-events-none -z-10" />
+      <div className="absolute top-[800px] -left-48 w-[600px] h-[600px] bg-cyan-500/10 blur-[150px] pointer-events-none -z-10" />
+      <div className="absolute top-[1800px] -right-48 w-[700px] h-[700px] bg-purple-600/10 blur-[160px] pointer-events-none -z-10" />
+
+      {/* Top Banner Notice */}
+      <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white text-center py-2.5 px-4 text-xs font-medium border-b border-white/10 flex items-center justify-center gap-2">
         <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0 animate-pulse" />
-        <span>LeadAI Pro 2.0: Real Google Places Discovery • Zero Synthetic Data • Approval Center Gating</span>
+        <span>LeadAI Pro 2.0: Real Google Places Discovery • Zero Synthetic Data • Human Approval Gating</span>
         <Link href="/discovery" className="underline font-bold text-cyan-300 hover:text-white ml-1">
-          Explore Discovery →
+          Launch Discovery →
         </Link>
       </div>
 
-      {/* Main Navigation Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/85 dark:bg-[#080f25]/85 border-b border-slate-200 dark:border-white/10 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 ring-1 ring-white/20">
-              <Zap className="w-5 h-5 text-white" />
+      {/* Floating Modern Header */}
+      <header className="sticky top-4 z-50 max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="h-16 rounded-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/90 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 sm:px-6 flex items-center justify-between transition-all">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30 group-hover:scale-105 transition-transform">
+              <Zap className="w-4.5 h-4.5" />
             </div>
             <div>
-              <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
                 LeadAI<span className="text-blue-600 dark:text-cyan-400">Pro</span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
+                <span className="text-[10px] uppercase font-extrabold tracking-widest px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                   Enterprise
                 </span>
               </span>
             </div>
-          </div>
+          </Link>
 
-          <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold text-slate-600 dark:text-slate-300">
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600 dark:text-slate-300">
+            <Link href="#simulator" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+              Interactive Demo
+            </Link>
+            <Link href="/discovery" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-1">
+              <Search className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+              Discovery
+            </Link>
+            <Link href="/pipeline" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-blue-400" />
+              14-Stage Board
+            </Link>
+            <Link href="/approvals" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              Approvals
+            </Link>
             <Link href="#features" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
               Features
-            </Link>
-            <Link href="/discovery" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-              <Search className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
-              AI Discovery
-            </Link>
-            <Link href="/pipeline" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-indigo-600 dark:text-blue-400" />
-              14-Stage Pipeline
-            </Link>
-            <Link href="/approvals" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              Approval Center
-            </Link>
-            <Link href="/chat" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-              <Bot className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              AI Command
             </Link>
           </nav>
 
           <div className="flex items-center gap-3">
-            {/* Theme Toggle Button */}
             <ThemeToggle />
-
             <Link
               href="/login"
-              className="px-3.5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+              className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
             >
               Sign In
             </Link>
             <Link
               href="/dashboard"
-              className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+              className="shimmer-btn px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 rounded-xl shadow-md shadow-blue-500/25 transition-all flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>Launch Platform</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="pt-16 pb-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center">
-        {/* Animated Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-semibold mb-6 shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
-          <span>The Autonomous AI Sales Employee for Digital Agencies</span>
+      <section className="pt-20 pb-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center relative">
+        {/* Glowing Pill Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-bold mb-6 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>The Autonomous AI Sales Employee for High-Growth Agencies</span>
         </div>
 
-        {/* Hero Headline */}
+        {/* Epic Main Headline */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.12] mb-6">
-          Put Your Lead Generation,{' '}
+          Turn Real Business Footprints Into{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-cyan-300 dark:to-indigo-400">
-            Client Outreach & Proposals
-          </span>{' '}
-          On Autonomous Autopilot
+            Closed Contract Revenue
+          </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed mb-9">
-          Discovers real local businesses from Google Places, scores digital footprints 0–100, crafts personalized outreach, and drafts executive proposals — with 100% human approval gating.
+        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed mb-10">
+          Discovers real businesses from Google Places registries, scores digital footprints 0–100, crafts personalized outreach, and drafts executive proposals — protected by human approval gating.
         </p>
 
-        {/* Primary CTA Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 mb-12">
+        {/* Hero CTA Row */}
+        <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 mb-14">
           <Link
             href="/dashboard"
-            className="px-7 py-3.5 text-sm sm:text-base font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+            className="shimmer-btn px-7 py-3.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 rounded-xl shadow-xl shadow-blue-500/25 transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>Launch Dashboard</span>
+            <span>Launch Executive Dashboard</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/discovery"
-            className="px-6 py-3.5 text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm transition-all flex items-center justify-center gap-2"
+            className="px-6 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm transition-all flex items-center justify-center gap-2"
           >
             <Search className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
             <span>Discover Local Leads</span>
           </Link>
           <Link
             href="/approvals"
-            className="px-6 py-3.5 text-sm sm:text-base font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 rounded-xl border border-emerald-200 dark:border-emerald-500/30 transition-all flex items-center justify-center gap-2"
+            className="px-6 py-3.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 rounded-xl border border-emerald-200 dark:border-emerald-500/30 transition-all flex items-center justify-center gap-2"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Approval Center</span>
           </Link>
         </div>
 
-        {/* Social Proof Badges */}
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs font-semibold text-slate-500 dark:text-slate-400 pt-6 border-t border-slate-200/80 dark:border-white/10 mb-14">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Zero Synthetic Data Guarantee</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Human Approval Gated</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>5-Key Multi De-Duplication</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>14-Stage Visual Pipeline</span>
-          </div>
+        {/* 4 Pillars Social Proof Strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto mb-16 text-left">
+          {[
+            { icon: CheckCircle2, title: 'Zero Synthetic Leads', desc: 'Real Google Places registries only' },
+            { icon: ShieldCheck, title: '100% Gated Outreach', desc: 'Zero auto-send risk with approvals' },
+            { icon: Database, title: '5-Key De-Duplication', desc: 'Email, phone, domain, placeId, name' },
+            { icon: Layers, title: '14-Stage Visual Deal Flow', desc: 'From discovery to paid contract' },
+          ].map((pill, i) => {
+            const Icon = pill.icon;
+            return (
+              <div
+                key={i}
+                className="p-3.5 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/10 backdrop-blur-sm flex items-start gap-2.5 shadow-sm"
+              >
+                <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-cyan-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{pill.title}</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">{pill.desc}</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* 3D Showcase Window Mockup */}
         <div className="rounded-3xl p-3 bg-gradient-to-b from-slate-200 via-slate-100 to-transparent dark:from-blue-500/20 dark:via-indigo-500/10 dark:to-transparent border border-slate-200 dark:border-white/15 shadow-2xl">
-          {/* Browser Window Header */}
+          {/* macOS Style Window Bar */}
           <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100 dark:bg-slate-900 rounded-t-2xl border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-red-400 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" />
+              <span className="w-3 h-3 rounded-full bg-red-400" />
+              <span className="w-3 h-3 rounded-full bg-amber-400" />
+              <span className="w-3 h-3 rounded-full bg-emerald-400" />
             </div>
             <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-950 px-4 py-1 rounded-md border border-slate-200 dark:border-slate-800">
-              app.leadaipro.com/dashboard
+              app.leadaipro.com/pipeline
             </div>
             <div className="w-12" />
           </div>
@@ -238,125 +274,160 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Live Interactive Discovery Simulator */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto border-t border-slate-200 dark:border-white/10">
+      {/* Interactive AI Sales Employee Showcase (Tabbed Bento) */}
+      <section id="simulator" className="py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto border-t border-slate-200 dark:border-white/10">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-bold mb-3">
-            <Search className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
-            Interactive Discovery Simulator
+            <Bot className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+            Live Autonomous Employee Simulator
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-3">
-            See How The AI Sales Employee Operates
+            Experience The Sales Workflow In Real-Time
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-            Select an industry below to see how LeadAI Pro mines real business signals and drafts gated outreach.
+            Choose an industry sector to see how LeadAI Pro mines verified business intelligence, assigns 0–100 scores, and queues drafts in the Human Approval Center.
           </p>
         </div>
 
-        {/* Simulator Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-xl">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Industry:</span>
-              <div className="flex gap-2">
-                {['Restaurant', 'Dental', 'SaaS'].map((ind) => (
-                  <button
-                    key={ind}
-                    onClick={() => handleSimulateScan(ind)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      selectedIndustry === ind
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                        : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
-                    }`}
-                  >
-                    {ind}
-                  </button>
-                ))}
+        {/* Tab Selector */}
+        <div className="flex justify-center mb-8">
+          <div className="p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex gap-1.5">
+            {[
+              { key: 'restaurant', label: '🍽️ Restaurant & Dining', tag: 'London' },
+              { key: 'dental', label: '🦷 Cosmetic Clinic', tag: 'London' },
+              { key: 'saas', label: '☁️ Enterprise Cloud', tag: 'San Francisco' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  activeTab === tab.key
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className="hidden sm:inline-block text-[10px] opacity-75 font-normal px-1.5 py-0.5 rounded bg-black/15">
+                  {tab.tag}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Showcase Container */}
+        <div className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 items-start transition-opacity duration-200 ${isSwitching ? 'opacity-40' : 'opacity-100'}`}>
+            {/* Left Column: Lead Footprint Intelligence (7 cols) */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-cyan-400">
+                    {activeDemo.sector}
+                  </span>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mt-0.5">
+                    <Building2 className="w-5 h-5 text-blue-600" />
+                    {activeDemo.name}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">{activeDemo.location}</p>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="px-3 py-1 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-xs font-bold flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5" />
+                    {activeDemo.badge}
+                  </span>
+                  <div className="text-[11px] text-slate-400 mt-1">Status: Gated</div>
+                </div>
+              </div>
+
+              {/* 3 Metric Signals */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-white/5 text-center">
+                  <div className="text-[11px] text-slate-500">Google Reputation</div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1 mt-1">
+                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                    {activeDemo.rating} ({activeDemo.reviews})
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-white/5 text-center">
+                  <div className="text-[11px] text-slate-500">Website Audit</div>
+                  <div className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-1.5">{activeDemo.websiteStatus}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-white/5 text-center">
+                  <div className="text-[11px] text-slate-500">Footprint Score</div>
+                  <div className="text-sm font-black text-blue-600 dark:text-cyan-400 mt-1">{activeDemo.score}/100</div>
+                </div>
+              </div>
+
+              {/* AI Value Justification */}
+              <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
+                <div className="text-[11px] font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                  Why This Lead Is Valuable
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{activeDemo.whyValuable}</p>
+              </div>
+
+              {/* Recommended Solution Scope */}
+              <div>
+                <div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Recommended Scope:</div>
+                <div className="flex flex-wrap gap-2">
+                  {activeDemo.deliverables.map((d, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-slate-700 flex items-center gap-1"
+                    >
+                      <Check className="w-3 h-3 text-emerald-500" />
+                      {d}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="text-xs text-slate-500 flex items-center gap-1.5">
-              <span>Target Region:</span>
-              <span className="font-semibold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg">
-                London, UK
-              </span>
-            </div>
-          </div>
-
-          <div className={`transition-all duration-300 ${isScanning ? 'opacity-40 scale-[0.99]' : 'opacity-100 scale-100'}`}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Lead Information */}
-              <div className="lg:col-span-2 p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
-                      {activeLead.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">{activeLead.location} • {selectedIndustry} Sector</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-xs font-bold flex items-center gap-1">
-                    <Flame className="w-3.5 h-3.5" />
-                    {activeLead.status} Lead
+            {/* Right Column: Generated Outreach & Approval Queue Simulator (5 cols) */}
+            <div className="lg:col-span-5 p-5 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/10 flex flex-col justify-between h-full">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Mail className="w-4 h-4 text-purple-600" />
+                    Cold Outreach Draft
+                  </span>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-500/30">
+                    Awaiting Approval
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-center">
-                    <div className="text-[11px] text-slate-500">Google Reviews</div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1 mt-1">
-                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                      {activeLead.rating} ({activeLead.reviews})
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-center">
-                    <div className="text-[11px] text-slate-500">Website Status</div>
-                    <div className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-1.5">{activeLead.websiteStatus}</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-center">
-                    <div className="text-[11px] text-slate-500">Lead Score</div>
-                    <div className="text-sm font-black text-blue-600 dark:text-cyan-400 mt-1">{activeLead.score}/100</div>
-                  </div>
+                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 mb-3">
+                  <span className="text-slate-400 font-medium">Subject: </span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{activeDemo.subject}</span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
-                  <div className="text-[11px] font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
-                    AI Value Rationale
-                  </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{activeLead.whyValuable}</p>
+                <div className="p-3 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-mono text-[11px]">
+                  {activeDemo.body}
                 </div>
               </div>
 
-              {/* Outreach Preview */}
-              <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/10 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                      <Mail className="w-4 h-4 text-purple-600" />
-                      Generated Outreach
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-500/30">
-                      Gated in Queue
-                    </span>
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 mt-4 space-y-2">
+                {approvedState ? (
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-center gap-2 animate-bounce" style={{ animationIterationCount: 2 }}>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>✓ Authorized! Dispatched via Resend</span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 text-xs text-slate-700 dark:text-slate-300 mb-2.5">
-                    <span className="text-slate-500 font-medium">Subject: </span>
-                    <span className="font-semibold text-slate-900 dark:text-white">{activeLead.subject}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed italic">
-                    &ldquo;Hi there, we noticed {activeLead.name} holds an impressive {activeLead.rating}-star reputation on Google, yet diners cannot reserve directly online...&rdquo;
-                  </p>
-                </div>
-
-                <div className="pt-4 border-t border-slate-200 dark:border-white/10 mt-4">
-                  <Link
-                    href="/approvals"
-                    className="w-full py-2.5 px-4 text-xs font-bold text-center text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-all shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5"
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSimulateApprove}
+                    className="w-full py-2.5 px-4 text-xs font-bold text-center text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    Approve in Queue →
-                  </Link>
+                    <span>Simulate Human [Approve & Send]</span>
+                  </button>
+                )}
+
+                <div className="text-[10px] text-center text-slate-500 dark:text-slate-400">
+                  Protected by LeadAI Pro Approval Center gating protocol.
                 </div>
               </div>
             </div>
@@ -364,15 +435,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4-Step Autonomous Workflow Grid */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-slate-200 dark:border-white/10">
+      {/* 4-Step Pipeline Journey (Connected Horizontal Timeline) */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-slate-200 dark:border-white/10">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/15 border border-cyan-200 dark:border-cyan-500/30 text-cyan-700 dark:text-cyan-300 text-xs font-bold mb-3">
-            <Layers className="w-3.5 h-3.5" />
-            Autonomous Execution Flow
+            <Sliders className="w-3.5 h-3.5" />
+            Autonomous Pipeline Architecture
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-3">
-            The 4-Step Automated Sales Pipeline
+            How The Autonomous Engine Works
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
             From initial business discovery to signed agreements and automated follow-ups.
@@ -418,7 +489,7 @@ export default function HomePage() {
             return (
               <div
                 key={idx}
-                className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                className="card-hover p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
@@ -442,7 +513,7 @@ export default function HomePage() {
       </section>
 
       {/* 14-Stage Visual Pipeline Showcase */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-slate-200 dark:border-white/10">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-slate-200 dark:border-white/10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-purple-50 dark:bg-purple-500/15 border border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-bold mb-4">
@@ -498,8 +569,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6 Features Grid */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-slate-200 dark:border-white/10">
+      {/* 6 Core Feature Bento Grid */}
+      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-slate-200 dark:border-white/10">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-3">
             Engineered For Digital Agency Revenue
@@ -552,7 +623,7 @@ export default function HomePage() {
             return (
               <div
                 key={idx}
-                className="rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all"
+                className="card-hover rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
               >
                 <div className={`w-11 h-11 rounded-xl ${item.color} flex items-center justify-center mb-4`}>
                   <Icon className="w-5 h-5" />
@@ -565,8 +636,48 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Bottom Conversion CTA Banner */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center">
+      {/* Comparison Table Section (Old Way vs LeadAI Pro) */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto border-t border-slate-200 dark:border-white/10">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-3">
+            Legacy Manual Outreach vs. LeadAI Pro
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 text-sm">
+            Why high-growth agencies choose autonomous sales automation.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm bg-white dark:bg-slate-900">
+          <div className="grid grid-cols-3 p-4 bg-slate-100 dark:bg-slate-800/60 font-bold text-xs text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
+            <div>Sales Dimension</div>
+            <div className="text-slate-500">Old Manual Way</div>
+            <div className="text-blue-600 dark:text-cyan-400">LeadAI Pro Autonomous</div>
+          </div>
+          {[
+            { dim: 'Lead Discovery', old: 'Manual Google search & copy-paste', neu: 'Google Places API & Apify live mining' },
+            { dim: 'Data Authenticity', old: 'Purchased outdated broker lists', neu: '100% Real-time verified registries' },
+            { dim: 'Personalization', old: 'Generic cold email copy-paste', neu: 'Trained on target site SEO & reviews' },
+            { dim: 'Safety Control', old: 'Unchecked auto-spammers', neu: 'Human Approval Center gating' },
+            { dim: 'Proposals & MSAs', old: '3-4 hours per Word document', neu: 'Instant DRAFT auto-synthesis' },
+          ].map((row, i) => (
+            <div
+              key={i}
+              className={`grid grid-cols-3 p-4 text-xs ${i % 2 === 1 ? 'bg-slate-50 dark:bg-slate-950/40' : ''} border-b border-slate-100 dark:border-slate-800/60 last:border-b-0`}
+            >
+              <div className="font-semibold text-slate-900 dark:text-white">{row.dim}</div>
+              <div className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <span className="text-red-500 font-bold">✕</span> {row.old}
+              </div>
+              <div className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" /> {row.neu}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* High-Impact Bottom Conversion Banner */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center">
         <div className="rounded-3xl p-10 sm:p-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 text-white shadow-2xl relative overflow-hidden">
           <h2 className="text-2xl sm:text-4xl font-black tracking-tight mb-4">
             Transform Your B2B Sales Operation Today
@@ -577,7 +688,7 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-center gap-3.5">
             <Link
               href="/dashboard"
-              className="px-8 py-3.5 text-sm font-bold text-blue-600 bg-white hover:bg-slate-100 rounded-xl shadow-lg transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+              className="shimmer-btn px-8 py-3.5 text-sm font-bold text-blue-600 bg-white hover:bg-slate-100 rounded-xl shadow-lg transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Launch Platform</span>
               <ArrowRight className="w-4 h-4" />
@@ -592,7 +703,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Clean Footer */}
+      {/* Clean Modern Footer */}
       <footer className="border-t border-slate-200 dark:border-white/10 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
