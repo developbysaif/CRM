@@ -1,27 +1,41 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Spinner, LeadScoreBadge } from '@/components/ui/index';
 import { toast } from '@/components/ui/Toaster';
 import Link from 'next/link';
+import {
+  Kanban,
+  Search,
+  Plus,
+  Sparkles,
+  DollarSign,
+  Briefcase,
+  Clock,
+  User,
+  ExternalLink,
+  ChevronRight,
+  TrendingUp,
+  ShieldAlert,
+} from 'lucide-react';
 
 export const PIPELINE_STAGES = [
-  { id: 'New Lead', color: '#64748b' },
-  { id: 'Qualified', color: '#0284c7' },
-  { id: 'Contacted', color: '#2563eb' },
-  { id: 'Replied', color: '#8b5cf6' },
-  { id: 'Interested', color: '#059669' },
-  { id: 'Meeting', color: '#0d9488' },
-  { id: 'Proposal Sent', color: '#d97706' },
-  { id: 'Negotiation', color: '#ea580c' },
-  { id: 'Closed Won', color: '#16a34a' },
-  { id: 'Contract Sent', color: '#4f46e5' },
-  { id: 'Contract Signed', color: '#15803d' },
-  { id: 'Payment Pending', color: '#ca8a04' },
-  { id: 'Paid', color: '#166534' },
-  { id: 'Completed', color: '#0f766e' },
-  { id: 'Closed Lost', color: '#dc2626' },
-  { id: 'Do Not Contact', color: '#991b1b' },
+  { id: 'New Lead', color: '#64748b', probability: 10 },
+  { id: 'Qualified', color: '#0284c7', probability: 25 },
+  { id: 'Contacted', color: '#2563eb', probability: 35 },
+  { id: 'Replied', color: '#8b5cf6', probability: 50 },
+  { id: 'Interested', color: '#059669', probability: 65 },
+  { id: 'Meeting', color: '#0d9488', probability: 75 },
+  { id: 'Proposal Sent', color: '#d97706', probability: 80 },
+  { id: 'Negotiation', color: '#ea580c', probability: 85 },
+  { id: 'Closed Won', color: '#16a34a', probability: 100 },
+  { id: 'Contract Sent', color: '#4f46e5', probability: 90 },
+  { id: 'Contract Signed', color: '#15803d', probability: 100 },
+  { id: 'Payment Pending', color: '#ca8a04', probability: 95 },
+  { id: 'Paid', color: '#166534', probability: 100 },
+  { id: 'Completed', color: '#0f766e', probability: 100 },
+  { id: 'Closed Lost', color: '#dc2626', probability: 0 },
+  { id: 'Do Not Contact', color: '#991b1b', probability: 0 },
 ];
 
 export default function PipelinePage() {
@@ -112,72 +126,128 @@ export default function PipelinePage() {
     }
   }
 
-  const filteredLeads = leads.filter((lead) => {
-    if (!search) return true;
+  const filteredLeads = useMemo(() => {
+    if (!search) return leads;
     const term = search.toLowerCase();
-    return (
-      (lead.companyName || lead.company || '').toLowerCase().includes(term) ||
-      (lead.name || '').toLowerCase().includes(term) ||
-      (lead.industry || '').toLowerCase().includes(term) ||
-      (lead.city || '').toLowerCase().includes(term)
+    return leads.filter(
+      (lead) =>
+        (lead.companyName || lead.company || '').toLowerCase().includes(term) ||
+        (lead.name || '').toLowerCase().includes(term) ||
+        (lead.industry || '').toLowerCase().includes(term) ||
+        (lead.city || '').toLowerCase().includes(term)
     );
-  });
+  }, [leads, search]);
+
+  // Aggregate pipeline metrics
+  const metrics = useMemo(() => {
+    let totalVal = 0;
+    let activeCount = 0;
+    let wonCount = 0;
+
+    leads.forEach((l) => {
+      const val = l.estimatedValue || l.budget?.amount || 8500;
+      if (l.pipelineStatus === 'Closed Won' || l.pipelineStatus === 'Paid') {
+        wonCount += 1;
+        totalVal += val;
+      } else if (l.pipelineStatus !== 'Closed Lost' && l.pipelineStatus !== 'Do Not Contact') {
+        activeCount += 1;
+        totalVal += val;
+      }
+    });
+
+    const winRate = leads.length > 0 ? ((wonCount / leads.length) * 100).toFixed(0) : '25';
+
+    return { totalVal, activeCount, wonCount, winRate };
+  }, [leads]);
 
   return (
     <AppLayout
-      title="14-Stage Kanban Sales Pipeline"
-      subtitle="Drag and drop leads through the complete qualification, proposal, negotiation, contract, and payment lifecycle"
+      title="Sales Pipeline & Opportunities"
+      subtitle="Interactive Kanban board with drag-and-drop workflow advancement and automated document synthesis"
     >
-      {/* Top Filter Bar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-          flexWrap: 'wrap',
-          gap: 12,
-        }}
-      >
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <input
-            className="input"
-            style={{ width: 280, fontSize: 13, padding: '7px 12px' }}
-            placeholder="Filter pipeline leads..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <span style={{ fontSize: 12, color: '#64748b' }}>
-            Showing <strong>{filteredLeads.length}</strong> active opportunities
-          </span>
+      {/* Top Metrics Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pipeline Value</div>
+            <div className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
+              ${metrics.totalVal.toLocaleString()}
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <DollarSign className="w-4 h-4" />
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Link href="/discovery" className="btn btn-secondary btn-sm">
-            🎯 + Discover Leads
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Deals</div>
+            <div className="text-lg font-black text-blue-600 mt-0.5">{metrics.activeCount}</div>
+          </div>
+          <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <Briefcase className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Closed Won</div>
+            <div className="text-lg font-black text-emerald-600 mt-0.5">{metrics.wonCount}</div>
+          </div>
+          <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Win Rate</div>
+            <div className="text-lg font-black text-purple-600 mt-0.5">{metrics.winRate}%</div>
+          </div>
+          <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <Sparkles className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
+      {/* Filter and Action Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search deals by company, contact..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/discovery"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span>AI Discovery</span>
           </Link>
-          <Link href="/approvals" className="btn btn-primary btn-sm">
-            🛡️ View Approvals
+
+          <Link
+            href="/approvals"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+          >
+            <span>Approval Center</span>
           </Link>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
+        <div className="flex justify-center p-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80">
           <Spinner size={36} />
         </div>
       ) : (
         /* Kanban Board Horizontal Scroll Container */
-        <div
-          style={{
-            display: 'flex',
-            gap: 12,
-            overflowX: 'auto',
-            paddingBottom: 24,
-            minHeight: '75vh',
-            alignItems: 'flex-start',
-          }}
-        >
+        <div className="flex gap-3 overflow-x-auto pb-6 min-h-[70vh] items-start select-none">
           {PIPELINE_STAGES.map((stage) => {
             const columnLeads = filteredLeads.filter((l) => l.pipelineStatus === stage.id);
             const isOver = dragOverStage === stage.id;
@@ -188,161 +258,96 @@ export default function PipelinePage() {
                 onDragOver={(e) => onDragOver(e, stage.id)}
                 onDragLeave={onDragLeave}
                 onDrop={(e) => onDrop(e, stage.id)}
-                style={{
-                  minWidth: 260,
-                  maxWidth: 280,
-                  flex: '0 0 260px',
-                  background: isOver ? '#f1f5f9' : '#f8fafc',
-                  border: isOver ? '2px dashed #2563eb' : '1px solid #e2e8f0',
-                  borderRadius: 10,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  maxHeight: 'calc(100vh - 180px)',
-                  transition: 'background 0.15s ease',
-                }}
+                className={`w-72 shrink-0 rounded-2xl flex flex-col max-h-[calc(100vh-210px)] transition-all ${
+                  isOver
+                    ? 'bg-blue-50/50 dark:bg-blue-950/30 border-2 border-dashed border-blue-500'
+                    : 'bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800'
+                }`}
               >
                 {/* Column Header */}
-                <div
-                  style={{
-                    padding: '12px 14px',
-                    borderBottom: '1px solid #e2e8f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: '#ffffff',
-                    borderTopLeftRadius: 10,
-                    borderTopRightRadius: 10,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        background: stage.color,
-                      }}
+                <div className="p-3 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 rounded-t-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: stage.color }}
                     />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
                       {stage.id}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold">
+                      ({stage.probability}%)
                     </span>
                   </div>
 
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: '2px 7px',
-                      borderRadius: 10,
-                      background: '#f1f5f9',
-                      color: '#475569',
-                    }}
-                  >
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                     {columnLeads.length}
                   </span>
                 </div>
 
                 {/* Column Cards List */}
-                <div
-                  style={{
-                    padding: 10,
-                    overflowY: 'auto',
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                  }}
-                >
+                <div className="p-2.5 overflow-y-auto flex-1 flex flex-col gap-2.5">
                   {columnLeads.length === 0 ? (
-                    <div
-                      style={{
-                        padding: '24px 10px',
-                        textAlign: 'center',
-                        fontSize: 12,
-                        color: '#94a3b8',
-                      }}
-                    >
-                      Drop leads here
+                    <div className="py-8 text-center text-xs text-slate-400 font-medium">
+                      Drop deals here
                     </div>
                   ) : (
-                    columnLeads.map((lead) => (
-                      <div
-                        key={lead._id}
-                        draggable
-                        onDragStart={(e) => onDragStart(e, lead._id)}
-                        className="card"
-                        style={{
-                          padding: 12,
-                          background: '#ffffff',
-                          cursor: 'grab',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                          border: updatingId === lead._id ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
-                          opacity: draggedLeadId === lead._id ? 0.4 : 1,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                          <Link
-                            href={`/leads/${lead._id}`}
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: '#0f172a',
-                              textDecoration: 'none',
-                              lineHeight: 1.3,
-                            }}
-                          >
-                            {lead.companyName || lead.company || lead.name}
-                          </Link>
+                    columnLeads.map((lead) => {
+                      const dealVal = lead.estimatedValue || lead.budget?.amount || 8500;
+                      const isUpdating = updatingId === lead._id;
+                      const isDragging = draggedLeadId === lead._id;
 
-                          <LeadScoreBadge score={lead.leadScore} status={lead.leadStatus} />
-                        </div>
-
-                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6 }}>
-                          {lead.name} {lead.city ? `· ${lead.city}` : ''}
-                        </div>
-
-                        {/* Why valuable snippet */}
-                        {lead.whyValuable && (
-                          <div
-                            style={{
-                              fontSize: 11,
-                              color: '#475569',
-                              lineHeight: 1.3,
-                              background: '#f8fafc',
-                              padding: '4px 6px',
-                              borderRadius: 4,
-                              marginBottom: 8,
-                            }}
-                          >
-                            {lead.whyValuable.slice(0, 85)}...
-                          </div>
-                        )}
-
-                        {/* Bottom Actions */}
+                      return (
                         <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            borderTop: '1px solid #f1f5f9',
-                            paddingTop: 8,
-                            fontSize: 11,
-                          }}
+                          key={lead._id}
+                          draggable
+                          onDragStart={(e) => onDragStart(e, lead._id)}
+                          className={`p-3.5 bg-white dark:bg-slate-800 rounded-xl border cursor-grab active:cursor-grabbing shadow-xs hover:shadow-md transition-all ${
+                            isUpdating
+                              ? 'border-blue-500 ring-2 ring-blue-500/20'
+                              : 'border-slate-200/80 dark:border-slate-700'
+                          } ${isDragging ? 'opacity-40 scale-95' : 'opacity-100'}`}
                         >
-                          <span style={{ color: '#94a3b8' }}>
-                            {lead.website ? '🌐 Web' : '🚫 No Web'}
-                          </span>
+                          {/* Card Top: Company & Score */}
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <Link
+                              href={`/leads/${lead._id}`}
+                              className="text-xs font-bold text-slate-900 dark:text-slate-100 hover:text-blue-600 line-clamp-1 leading-snug"
+                            >
+                              {lead.companyName || lead.company || lead.name}
+                            </Link>
+                            <LeadScoreBadge score={lead.leadScore || 50} />
+                          </div>
 
-                          <Link
-                            href={`/leads/${lead._id}`}
-                            style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}
-                          >
-                            Profile →
-                          </Link>
+                          {/* Customer & Industry */}
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mb-2">
+                            👤 {lead.name} {lead.city ? `• ${lead.city}` : ''}
+                          </div>
+
+                          {/* Deal Value & Probability Badge */}
+                          <div className="flex items-center justify-between mb-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                            <div className="text-xs font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-0.5">
+                              <DollarSign className="w-3 h-3 text-emerald-600" />
+                              <span>{dealVal.toLocaleString()}</span>
+                            </div>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
+                              {stage.probability}% win
+                            </span>
+                          </div>
+
+                          {/* Footer: Assignee & Next Follow-up */}
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                            <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
+                              <User className="w-3 h-3" />
+                              <span>Aura AI</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-slate-500">
+                              <Clock className="w-3 h-3" />
+                              <span>Next: +7d</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -353,3 +358,4 @@ export default function PipelinePage() {
     </AppLayout>
   );
 }
+

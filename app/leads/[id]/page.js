@@ -6,6 +6,29 @@ import { LeadScoreBadge, Spinner } from '@/components/ui/index';
 import { toast } from '@/components/ui/Toaster';
 import Link from 'next/link';
 import { PIPELINE_STAGES } from '@/app/pipeline/page';
+import {
+  Phone,
+  Mail,
+  MessageSquare,
+  CheckSquare,
+  FileText,
+  Clock,
+  ExternalLink,
+  Sparkles,
+  Building2,
+  User,
+  Star,
+  ArrowLeft,
+  Send,
+  ShieldCheck,
+  ShieldAlert,
+  Check,
+  ChevronRight,
+  Plus,
+  MapPin,
+  Calendar,
+} from 'lucide-react';
+
 
 export default function LeadDetailPage() {
   const { id } = useParams();
@@ -254,91 +277,152 @@ export default function LeadDetailPage() {
       title={lead.companyName || lead.company || lead.name}
       subtitle={`Verified ${lead.industry || 'B2B'} Prospect · ${lead.city || lead.country || 'Location Unspecified'}`}
     >
+      {/* Back Link Breadcrumb */}
+      <div className="mb-4">
+        <Link
+          href="/leads"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Leads Directory</span>
+        </Link>
+      </div>
+
       {/* Top Profile Header Bar */}
-      <div
-        className="card"
-        style={{
-          padding: '20px 24px',
-          marginBottom: 24,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 16,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div
-            style={{
-              width: 50,
-              height: 50,
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 22,
-              color: 'white',
-              fontWeight: 800,
-            }}
-          >
-            {(lead.companyName || lead.company || lead.name || 'B').charAt(0).toUpperCase()}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 mb-5 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          {/* Company & Identity */}
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl font-black shrink-0 shadow-md shadow-blue-500/20">
+              {(lead.companyName || lead.company || lead.name || 'B').charAt(0).toUpperCase()}
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight truncate">
+                  {lead.companyName || lead.company || lead.name}
+                </h1>
+                <LeadScoreBadge score={lead.leadScore || 50} />
+                {lead.doNotContact && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-100 text-red-700 border border-red-200 uppercase">
+                    Do Not Contact 🚫
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-medium">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  {lead.name || 'Direct Contact'}
+                </span>
+                {lead.phone && (
+                  <a href={`tel:${lead.phone}`} className="flex items-center gap-1 text-blue-600 hover:underline">
+                    <Phone className="w-3.5 h-3.5 text-blue-500" />
+                    {lead.phone}
+                  </a>
+                )}
+                {lead.email && (
+                  <a href={`mailto:${lead.email}`} className="flex items-center gap-1 text-slate-600 hover:text-blue-600">
+                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                    {lead.email}
+                  </a>
+                )}
+                {lead.website ? (
+                  <a href={lead.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {lead.domain || 'Website'}
+                  </a>
+                ) : (
+                  <span className="text-red-500 font-semibold text-[11px]">No Website</span>
+                )}
+                {lead.rating && (
+                  <span className="flex items-center gap-0.5 text-amber-500 font-bold">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    {lead.rating} ({lead.reviewCount || 0})
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                {lead.companyName || lead.company || lead.name}
-              </h1>
-              <LeadScoreBadge score={lead.leadScore} status={lead.leadStatus} />
-              {lead.doNotContact && (
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: '#fee2e2', color: '#b91c1c' }}>
-                  DO NOT CONTACT 🚫
-                </span>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13, color: '#64748b', marginTop: 4, flexWrap: 'wrap' }}>
-              <span>👤 {lead.name}</span>
-              {lead.phone && <span>📞 {lead.phone}</span>}
-              {lead.email && <span>✉️ {lead.email}</span>}
-              {lead.website ? (
-                <a href={lead.website} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>
-                  🌐 {lead.domain || 'Website'} ↗
-                </a>
-              ) : (
-                <span style={{ color: '#dc2626', fontWeight: 600 }}>🚫 No Website</span>
-              )}
-              {lead.rating && (
-                <span>⭐ {lead.rating} ({lead.reviewCount || 0} reviews)</span>
-              )}
-              {lead.googleMapsUrl && (
-                <a href={lead.googleMapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>
-                  📍 Google Maps ↗
-                </a>
-              )}
-            </div>
+          {/* Quick Lifecycle Stage Selector */}
+          <div className="flex items-center gap-2 self-start lg:self-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stage:</span>
+            <select
+              value={lead.pipelineStatus || 'New Lead'}
+              onChange={(e) => updateStage(e.target.value)}
+              className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+            >
+              {PIPELINE_STAGES.map((s) => (
+                <option key={s.id} value={s.id}>{s.id}</option>
+              ))}
+            </select>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        {/* Clear Dedicated CTA Section */}
+        <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+          {/* 1. Call */}
+          <a
+            href={lead.phone ? `tel:${lead.phone}` : '#'}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              lead.phone
+                ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                : 'opacity-50 cursor-not-allowed bg-slate-50 text-slate-400 border-slate-200'
+            }`}
+          >
+            <Phone className="w-3.5 h-3.5" />
+            <span>Call</span>
+          </a>
+
+          {/* 2. Email */}
+          <button
+            onClick={() => setActiveTab('email_thread')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200/80 text-slate-700 dark:text-slate-200 transition-all"
+          >
+            <Mail className="w-3.5 h-3.5 text-slate-500" />
+            <span>Email</span>
+          </button>
+
+          {/* 3. Message */}
+          <button
+            onClick={() => setActiveTab('personalization')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 hover:bg-indigo-100 transition-all"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Message / Pitch</span>
+          </button>
+
+          {/* 4. Create Task */}
+          <Link
+            href="/tasks"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-all"
+          >
+            <CheckSquare className="w-3.5 h-3.5 text-slate-500" />
+            <span>Create Task</span>
+          </Link>
+
+          {/* 5. Send Proposal */}
           <button
             onClick={handleCreateProposalDraft}
             disabled={actionLoading === 'prop'}
-            className="btn btn-secondary btn-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 hover:bg-amber-100 transition-all disabled:opacity-50"
           >
-            {actionLoading === 'prop' ? 'Drafting...' : '📄 + Proposal Draft'}
+            <FileText className="w-3.5 h-3.5 text-amber-600" />
+            <span>{actionLoading === 'prop' ? 'Drafting...' : 'Send Proposal'}</span>
           </button>
+
+          {/* 6. Schedule Follow-up */}
           <button
-            onClick={handleCreateContractDraft}
-            disabled={actionLoading === 'con'}
-            className="btn btn-primary btn-sm"
-            style={{ background: '#16a34a', borderColor: '#16a34a' }}
+            onClick={() => setActiveTab('followups')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-300 border border-teal-200 hover:bg-teal-100 transition-all"
           >
-            {actionLoading === 'con' ? 'Preparing...' : '📝 + Contract Draft'}
+            <Clock className="w-3.5 h-3.5 text-teal-600" />
+            <span>Schedule Follow-up</span>
           </button>
         </div>
       </div>
+
 
       {/* 2-Column Main Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 24, alignItems: 'flex-start' }}>
