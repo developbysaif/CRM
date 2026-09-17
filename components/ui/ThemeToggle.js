@@ -8,11 +8,13 @@ export default function ThemeToggle({ className = '' }) {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem('crm_theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = saved || (prefersDark ? 'dark' : 'light');
-    setTheme(initialTheme);
-    applyTheme(initialTheme);
+    let saved = localStorage.getItem('crm_theme');
+    if (!saved || saved === 'dark') {
+      saved = 'light';
+      localStorage.setItem('crm_theme', 'light');
+    }
+    setTheme(saved);
+    applyTheme(saved);
   }, []);
 
   const applyTheme = (t) => {

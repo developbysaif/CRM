@@ -15,8 +15,12 @@ export default function RootLayout({ children }) {
               (function() {
                 try {
                   var saved = localStorage.getItem('crm_theme');
-                  var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                  if (theme === 'dark') {
+                  // Always default to clean white theme
+                  if (!saved || saved === 'dark') {
+                    saved = 'light';
+                    localStorage.setItem('crm_theme', 'light');
+                  }
+                  if (saved === 'dark') {
                     document.documentElement.classList.add('dark');
                     document.documentElement.setAttribute('data-theme', 'dark');
                   } else {
