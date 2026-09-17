@@ -339,7 +339,7 @@ export default function LeadDetailPage({ params }) {
                       onChange={(e) => setNewNote(e.target.value)}
                       placeholder="Add an internal note or task for this prospect..."
                       rows={3}
-                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <div className="flex justify-end">
                       <Button size="sm" type="submit">Add Note</Button>

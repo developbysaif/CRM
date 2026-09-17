@@ -249,7 +249,7 @@ export function Input({ label, error, helper, icon: Icon, className = '', ...pro
           </div>
         )}
         <input
-          className={`w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-slate-400 disabled:opacity-50 ${
+          className={`w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:opacity-50 ${
             Icon ? 'pl-9' : ''
           } ${error ? 'border-red-500 focus:ring-red-500' : ''} ${className}`}
           {...props}
@@ -276,7 +276,7 @@ export function Select({ label, error, options = [], className = '', ...props })
         {...props}
       >
         {options.map((opt, i) => (
-          <option key={i} value={typeof opt === 'object' ? opt.value : opt}>
+          <option key={i} value={typeof opt === 'object' ? opt.value : opt} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
             {typeof opt === 'object' ? opt.label : opt}
           </option>
         ))}

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   /* Brand & Accent Tokens */
   --primary: #2563eb;
@@ -97,6 +99,43 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
+}
+
+/* ==================== TYPOGRAPHY & FORM CONTROLS HIGH CONTRAST ==================== */
+input, textarea, select {
+  color: var(--text-primary) !important;
+  border-color: var(--border);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1;
+}
+
+/* Ensure autofill never causes text to become invisible */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--card) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Ensure native select dropdown options have high contrast */
+select option {
+  background-color: var(--card);
+  color: var(--text-primary);
+}
+
+/* Default headings and labels high contrast */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
 }
 
 /* ==================== LAYOUT SHELL ==================== */

@@ -188,7 +188,8 @@ export default function AutomationPage() {
               rows={3}
               value={testReplyText}
               onChange={(e) => setTestReplyText(e.target.value)}
-              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Paste simulated lead email reply here..."
+              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <Button size="sm" icon={Sparkles} loading={isClassifying} onClick={handleTestClassifier}>
