@@ -1,39 +1,13 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { Button, Badge, Card, CardHeader, CardTitle, CardContent, StatCard, Spinner, EmptyState } from '@/components/ui/index';
+import { StatCard, Spinner, EmptyState } from '@/components/ui/index';
 import { toast } from '@/components/ui/Toaster';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
-import {
-  Zap,
-  Play,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  Clock,
-  Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  Mail,
-  Terminal,
-  Sliders,
-  ChevronRight,
-  Bot,
-  Layers,
-  Send,
-  Calendar,
-  Check,
-  Copy,
-  ExternalLink,
-  Filter,
-  CheckSquare,
-  AlertTriangle,
-  RotateCcw,
-} from 'lucide-react';
 
 export default function AutomationPage() {
-  const [activeTab, setActiveTab] = useState('workflow'); // 'workflow' | 'simulator' | 'email' | 'apify'
+  const [activeTab, setActiveTab] = useState('cron'); // 'cron' | 'reply_simulator' | 'email' | 'apify'
 
   // Email State
   const [emailLogs, setEmailLogs] = useState([]);
@@ -55,60 +29,6 @@ export default function AutomationPage() {
   const [simulatedReply, setSimulatedReply] = useState('Sounds interesting. How much would a modern website cost?');
   const [simulating, setSimulating] = useState(false);
   const [simulationResult, setSimulationResult] = useState(null);
-
-  // Active Automation Engines Toggles & Execution Metrics
-  const [activeWorkflows, setActiveWorkflows] = useState([
-    {
-      id: 'outreach',
-      title: 'AI Multi-Channel Outreach Synthesizer',
-      description: 'Generates personalized email, LinkedIn, and SMS cold drafts when lead score exceeds threshold.',
-      trigger: 'Lead Ingested & Scored ≥ 75',
-      action: 'Generate 3 drafts & push to Approval Queue',
-      enabled: true,
-      executionCount: 312,
-      lastRun: '12 mins ago',
-      icon: Sparkles,
-      iconColor: 'text-indigo-600 bg-indigo-50 border-indigo-200',
-    },
-    {
-      id: 'cadence',
-      title: '7-Day Follow-Up Cadence Engine',
-      description: 'Automates a 5-touch email follow-up sequence. Halts automatically on prospect reply or unsubscribe.',
-      trigger: 'Scheduled interval elapsed (Every 7d)',
-      action: 'Enqueue next follow-up touchpoint for review',
-      enabled: true,
-      executionCount: 184,
-      lastRun: '45 mins ago',
-      icon: Clock,
-      iconColor: 'text-blue-600 bg-blue-50 border-blue-200',
-    },
-    {
-      id: 'classifier',
-      title: 'Inbound Reply Intent Classifier',
-      description: 'Zero-shot classifies inbound prospect emails into 11 intents and advances CRM lifecycle stage.',
-      trigger: 'Inbound webhook / email received',
-      action: 'Update pipeline stage & notify deal owner',
-      enabled: true,
-      executionCount: 96,
-      lastRun: '2 hours ago',
-      icon: Bot,
-      iconColor: 'text-emerald-600 bg-emerald-50 border-emerald-200',
-    },
-    {
-      id: 'scoring',
-      title: 'Digital Footprint & SEO Enrichment',
-      description: 'Scrapes target website to detect missing SSL, mobile responsiveness, Lighthouse speed, and tech stack.',
-      trigger: 'New Google Places / Apify lead discovered',
-      action: 'Calculate 0-100 Score & generate audit report',
-      enabled: true,
-      executionCount: 520,
-      lastRun: '5 mins ago',
-      icon: Zap,
-      iconColor: 'text-amber-600 bg-amber-50 border-amber-200',
-    },
-  ]);
-
-  const [copiedCron, setCopiedCron] = useState(false);
 
   const fetchEmailLogs = useCallback(async () => {
     try {
@@ -227,442 +147,139 @@ export default function AutomationPage() {
     }
   }
 
-  const toggleWorkflow = (id) => {
-    setActiveWorkflows((prev) =>
-      prev.map((wf) => {
-        if (wf.id === id) {
-          const next = !wf.enabled;
-          toast.info(`${wf.title} is now ${next ? 'activated' : 'paused'}`);
-          return { ...wf, enabled: next };
-        }
-        return wf;
-      })
-    );
-  };
-
-  const handleCopyCronSnippet = () => {
-    const code = `{\n  "crons": [{\n    "path": "/api/automation/cron",\n    "schedule": "0 9 * * *"\n  }]\n}`;
-    navigator.clipboard.writeText(code);
-    setCopiedCron(true);
-    toast.success('Copied Vercel cron configuration to clipboard!');
-    setTimeout(() => setCopiedCron(false), 2500);
-  };
-
-  const workflowSteps = [
-    {
-      step: '01',
-      title: 'Trigger',
-      label: 'New Lead Ingested',
-      desc: 'Google Places, Apify or Manual Discovery imports contact details & website.',
-      badge: 'Event',
-      badgeColor: 'primary',
-      icon: Zap,
-    },
-    {
-      step: '02',
-      title: 'Condition',
-      label: 'Score ≥ 75 & Valid Email',
-      desc: 'AI audits site performance, technology gaps, and validates MX records.',
-      badge: 'Evaluation',
-      badgeColor: 'warning',
-      icon: Filter,
-    },
-    {
-      step: '03',
-      title: 'Action',
-      label: 'Aura AI Pitch Synthesizer',
-      desc: 'Drafts tailored multi-channel outreach and queues for human authorization.',
-      badge: 'Execution',
-      badgeColor: 'indigo',
-      icon: Sparkles,
-    },
-    {
-      step: '04',
-      title: 'Follow-up',
-      label: '5-Touch Smart Cadence',
-      desc: '7-day automated intervals with dynamic content based on prospect industry.',
-      badge: 'Scheduled',
-      badgeColor: 'primary',
-      icon: Clock,
-    },
-    {
-      step: '05',
-      title: 'Notification',
-      label: 'Inbound Reply & Hand-off',
-      desc: 'Classifies prospect reply, advances deal stage, and alerts rep via Slack/Email.',
-      badge: 'Conversion',
-      badgeColor: 'success',
-      icon: Bot,
-    },
-  ];
-
   return (
     <AppLayout
-      title="Sales Automation & Workflow Orchestration"
-      subtitle="Visual workflow diagrams, 5-touch cadence scheduler, and inbound AI reply classification"
+      title="Sales Automations & Background Workers"
+      subtitle="Manage automated 5-step follow-up sequences, inbound AI reply detection, and cron scheduling"
     >
-      {/* Top Telemetry Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          icon={<Zap className="w-5 h-5 text-blue-600" />}
-          label="Active Automations"
-          value={activeWorkflows.filter((w) => w.enabled).length}
-          change="+4 fully configured"
-          trend="up"
-        />
-        <StatCard
-          icon={<Clock className="w-5 h-5 text-indigo-600" />}
-          label="Follow-ups in Queue"
-          value={cronResult?.jobs?.followUpScheduler?.processed || '12'}
-          change="Cadence: 7-day interval"
-          trend="neutral"
-        />
-        <StatCard
-          icon={<Mail className="w-5 h-5 text-emerald-600" />}
-          label="Delivered Emails"
-          value={emailStats.totalSent || 0}
-          change={`${emailStats.totalAll || 0} total attempts`}
-          trend="up"
-        />
-        <StatCard
-          icon={<Bot className="w-5 h-5 text-amber-600" />}
-          label="AI Reply Classifications"
-          value="98.4%"
-          change="11 intent models active"
-          trend="up"
-        />
-      </div>
-
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 mb-6 border-b border-slate-200 overflow-x-auto pb-1">
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
         {[
-          { id: 'workflow', label: 'Workflow Canvas & Engine', icon: Layers },
-          { id: 'simulator', label: 'AI Reply Intent Simulator', icon: Bot },
-          { id: 'email', label: 'Email Delivery Logs', icon: Mail },
-          { id: 'apify', label: 'Apify Crawler Tasks', icon: Terminal },
-        ].map((t) => {
-          const Icon = t.icon;
-          const isActive = activeTab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-                isActive
-                  ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-lg'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
-              {t.label}
-            </button>
-          );
-        })}
+          { id: 'cron', label: '⏱️ Background Scheduler & Follow-ups' },
+          { id: 'reply_simulator', label: '🤖 AI Reply Detection Simulator' },
+          { id: 'email', label: '✉️ Email Delivery Logs' },
+          { id: 'apify', label: '🕷️ Scraper Tasks' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            style={{
+              padding: '10px 16px',
+              fontSize: 13,
+              fontWeight: activeTab === t.id ? 700 : 500,
+              color: activeTab === t.id ? '#2563eb' : '#64748b',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === t.id ? '2px solid #2563eb' : '2px solid transparent',
+              cursor: 'pointer',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* TAB 1: Visual Workflow Canvas & Engines */}
-      {activeTab === 'workflow' && (
-        <div className="space-y-6">
-          {/* Visual Workflow Diagram */}
-          <Card className="p-6 bg-gradient-to-b from-white to-slate-50/40">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      {/* TAB 1: Background Scheduler & Cron */}
+      {activeTab === 'cron' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <h3 className="text-base font-bold text-slate-900">
-                    Visual Sales Automation Pipeline
-                  </h3>
-                  <Badge variant="indigo" size="sm">End-to-End Autonomous</Badge>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Interactive overview of Aura AI's lead qualification, multi-channel pitch drafting, and follow-up progression.
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
+                  ⏱️ Background Job Scheduler & Follow-up Processor
+                </h3>
+                <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+                  Executes the 5-step follow-up sequence on a 7-day cadence. Automatically halts sequences if prospect replied, unsubscribed, or closed.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRunCron}
-                  loading={runningCron}
-                  icon={<Play className="w-3.5 h-3.5 text-blue-600" />}
-                >
-                  Run Scheduler Cron
-                </Button>
-              </div>
-            </div>
-
-            {/* 5-Node Workflow Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 relative">
-              {workflowSteps.map((step, idx) => {
-                const Icon = step.icon;
-                return (
-                  <div key={step.step} className="relative group">
-                    <div className="h-full bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-2.5">
-                          <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
-                            {step.step}
-                          </span>
-                          <Badge variant={step.badgeColor} size="sm">
-                            {step.badge}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                            {step.title}
-                          </h4>
-                        </div>
-                        <p className="text-xs font-semibold text-blue-600 mb-1">
-                          {step.label}
-                        </p>
-                        <p className="text-[11px] text-slate-500 leading-relaxed">
-                          {step.desc}
-                        </p>
-                      </div>
-
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-emerald-600 font-medium">
-                        <span className="inline-flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Operational
-                        </span>
-                        <span className="text-slate-400 font-mono">100% SLA</span>
-                      </div>
-                    </div>
-
-                    {/* Connector Arrow (Desktop Only) */}
-                    {idx < workflowSteps.length - 1 && (
-                      <div className="hidden md:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 w-5 h-5 rounded-full bg-white border border-slate-300 items-center justify-center text-slate-400 shadow-xs">
-                        <ArrowRight className="w-3 h-3" />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* Active Automation Engines Grid */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Autonomous Execution Engines</h3>
-                <p className="text-xs text-slate-500">Enable, monitor, and configure autonomous sales rules</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activeWorkflows.map((wf) => {
-                const Icon = wf.icon;
-                return (
-                  <Card key={wf.id} className="p-5 hover:border-slate-300 transition-all">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${wf.iconColor}`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-slate-900">{wf.title}</h4>
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                wf.enabled
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-slate-100 text-slate-600 border-slate-200'
-                              }`}
-                            >
-                              {wf.enabled ? 'ACTIVE' : 'PAUSED'}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{wf.description}</p>
-                        </div>
-                      </div>
-
-                      {/* Toggle Switch */}
-                      <button
-                        type="button"
-                        onClick={() => toggleWorkflow(wf.id)}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          wf.enabled ? 'bg-blue-600' : 'bg-slate-200'
-                        }`}
-                        title={wf.enabled ? 'Click to pause automation' : 'Click to activate automation'}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            wf.enabled ? 'translate-x-5' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 mb-3 space-y-1.5 text-xs">
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span className="text-slate-400 font-medium">Trigger:</span>
-                        <span className="font-semibold text-slate-800">{wf.trigger}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span className="text-slate-400 font-medium">Autonomous Action:</span>
-                        <span className="font-semibold text-blue-600 truncate ml-2">{wf.action}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
-                      <div className="flex items-center gap-3">
-                        <span>Total Runs: <strong className="text-slate-800">{wf.executionCount}</strong></span>
-                        <span>Last Executed: <strong className="text-slate-800">{wf.lastRun}</strong></span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRunCron}
-                        className="text-xs text-blue-600 hover:text-blue-700 p-1"
-                      >
-                        Test Trigger <ChevronRight className="w-3 h-3 ml-0.5" />
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Scheduler Cron Results & Vercel Config */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Real Scheduler Execution Box */}
-            <Card className="p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <h4 className="text-sm font-bold text-slate-900">Background Follow-Up Cron Job</h4>
-                  </div>
-                  <Badge variant="primary" size="sm">7-Day Cadence</Badge>
-                </div>
-                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                  Processes scheduled follow-up sequences across all leads in the database. Automatically cancels if the prospect has replied, opted out, or closed.
-                </p>
-
-                {cronResult ? (
-                  <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-xl space-y-2 mb-4 text-xs">
-                    <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Execution Completed in {cronResult.durationMs || 120}ms
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-emerald-100">
-                      <div className="bg-white p-2 rounded-lg border border-emerald-100">
-                        <div className="text-base font-extrabold text-slate-800">
-                          {cronResult.jobs?.followUpScheduler?.processed || 0}
-                        </div>
-                        <div className="text-[10px] text-slate-500">Processed</div>
-                      </div>
-                      <div className="bg-white p-2 rounded-lg border border-emerald-100">
-                        <div className="text-base font-extrabold text-blue-600">
-                          {cronResult.jobs?.followUpScheduler?.enqueuedForApproval || 0}
-                        </div>
-                        <div className="text-[10px] text-slate-500">Enqueued</div>
-                      </div>
-                      <div className="bg-white p-2 rounded-lg border border-emerald-100">
-                        <div className="text-base font-extrabold text-slate-500">
-                          {cronResult.jobs?.followUpScheduler?.cancelled || 0}
-                        </div>
-                        <div className="text-[10px] text-slate-500">Cancelled / DNC</div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4 text-xs text-slate-500 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>No manual executions triggered in this session. Click below to trigger the 7-day scheduler.</span>
-                  </div>
-                )}
-              </div>
-
-              <Button
-                variant="primary"
+              <button
                 onClick={handleRunCron}
                 disabled={runningCron}
-                loading={runningCron}
-                className="w-full"
-                icon={<Play className="w-4 h-4" />}
+                className="btn btn-primary btn-sm"
               >
-                Trigger Scheduler Now
-              </Button>
-            </Card>
+                {runningCron ? <Spinner size={14} /> : '⚡ Execute Scheduler Now'}
+              </button>
+            </div>
 
-            {/* Production Cron Configuration */}
-            <Card className="p-5 flex flex-col justify-between">
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 8,
+                padding: 16,
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: '#334155',
+              }}
+            >
+              <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
+                Production Deployment Instructions (Vercel Cron):
+              </div>
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Terminal className="w-4 h-4 text-slate-700" />
-                    <h4 className="text-sm font-bold text-slate-900">Vercel Cron Orchestration</h4>
-                  </div>
-                  <button
-                    onClick={handleCopyCronSnippet}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-                  >
-                    {copiedCron ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copiedCron ? 'Copied' : 'Copy JSON'}
-                  </button>
-                </div>
-                <p className="text-xs text-slate-600 mb-3">
-                  Add this block to your root <code>vercel.json</code> to trigger <code>/api/automation/cron</code> every day at 09:00 UTC:
-                </p>
-
-                <div className="relative bg-slate-900 text-slate-200 rounded-xl p-3 font-mono text-xs overflow-x-auto border border-slate-800">
-                  <pre className="text-blue-300">
+                Configure in <code>vercel.json</code> to ping <code>/api/automation/cron</code> every hour or daily:
+              </div>
+              <pre
+                style={{
+                  background: '#0f172a',
+                  color: '#38bdf8',
+                  padding: '10px 14px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  marginTop: 8,
+                }}
+              >
 {`{
-  "crons": [
-    {
-      "path": "/api/automation/cron",
-      "schedule": "0 9 * * *"
-    }
-  ]
+  "crons": [{
+    "path": "/api/automation/cron",
+    "schedule": "0 9 * * *"
+  }]
 }`}
-                  </pre>
+              </pre>
+            </div>
+
+            {cronResult && (
+              <div style={{ marginTop: 16, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 16 }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: '#166534', margin: '0 0 6px 0' }}>
+                  ✓ Last Scheduler Execution Results ({cronResult.durationMs}ms)
+                </h4>
+                <div style={{ fontSize: 12, color: '#15803d' }}>
+                  • Processed: <strong>{cronResult.jobs?.followUpScheduler?.processed || 0}</strong> follow-ups
+                  <br />
+                  • Enqueued for Human Approval: <strong>{cronResult.jobs?.followUpScheduler?.enqueuedForApproval || 0}</strong>
+                  <br />
+                  • Automatically Cancelled (Terminal State / DNC): <strong>{cronResult.jobs?.followUpScheduler?.cancelled || 0}</strong>
                 </div>
               </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span>Webhook Security: Bearer CRON_SECRET</span>
-                <Link href="/settings" className="text-blue-600 hover:underline font-medium">
-                  Configure Secret &rarr;
-                </Link>
-              </div>
-            </Card>
+            )}
           </div>
         </div>
       )}
 
       {/* TAB 2: AI Reply Detection Simulator */}
-      {activeTab === 'simulator' && (
-        <Card className="p-6">
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <Bot className="w-5 h-5 text-blue-600" />
-              <h3 className="text-base font-bold text-slate-900">
-                AI Inbound Reply Intent Classifier & Pipeline Advancement
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500">
-              Test how Aura AI classifies prospective client replies into 11 intents and automatically transitions their stage across the sales pipeline.
-            </p>
-          </div>
+      {activeTab === 'reply_simulator' && (
+        <div className="card" style={{ padding: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>
+            🤖 AI Reply Classification & CRM Advancement Simulator
+          </h3>
+          <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+            Test how incoming prospect emails are classified across the 11 intents and automatically advance the CRM pipeline.
+          </p>
 
-          <form onSubmit={handleSimulateReply} className="space-y-5">
+          <form onSubmit={handleSimulateReply} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Select Target Prospect Lead
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>
+                Select Test Lead
               </label>
               <select
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input"
                 value={selectedLeadId}
                 onChange={(e) => setSelectedLeadId(e.target.value)}
+                style={{ fontSize: 13 }}
               >
                 {leadsList.map((l) => (
                   <option key={l._id} value={l._id}>
-                    {l.companyName || l.company || l.name} — Current Stage: {l.pipelineStatus || 'New Lead'}
+                    {l.companyName || l.company || l.name} (Current Stage: {l.pipelineStatus})
                   </option>
                 ))}
               </select>
@@ -670,23 +287,23 @@ export default function AutomationPage() {
 
             {/* Quick Sample Reply Pills */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Quick Sample Inbound Responses
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 6 }}>
+                Quick Test Samples
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {[
-                  { label: '💰 Price Inquiry', text: 'Sounds interesting. How much would a modern web application cost?' },
-                  { label: '👍 High Interest', text: 'We would love to explore this further. Please send full proposal and pricing.' },
-                  { label: '📅 Meeting Request', text: 'Can we schedule a 15-minute Google Meet call on Thursday at 2 PM?' },
-                  { label: '🚫 Unsubscribe / DNC', text: 'Please remove our company from your email outreach immediately.' },
-                  { label: '👎 Objection / In-house', text: 'No thank you, we already have an internal engineering team handle this.' },
-                  { label: '❓ Technical Question', text: 'Does your solution support integrations with Salesforce and HubSpot?' },
+                  { label: '💰 Price Request', text: 'Sounds interesting. How much would a website cost?' },
+                  { label: '👍 Interested', text: 'We would like to explore this further. Please send details.' },
+                  { label: '📅 Meeting Request', text: 'Can we schedule a 15-minute call on Thursday to discuss?' },
+                  { label: '🚫 Unsubscribe', text: 'Please remove me from your mailing list immediately.' },
+                  { label: '👎 Not Interested', text: 'No thank you, we already have an internal engineering team.' },
                 ].map((sample, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => setSimulatedReply(sample.text)}
-                    className="px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200/80 transition-all cursor-pointer"
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: 11 }}
                   >
                     {sample.label}
                   </button>
@@ -695,165 +312,124 @@ export default function AutomationPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Inbound Email Content Body
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>
+                Client Email Reply Text
               </label>
               <textarea
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input"
                 rows={4}
                 value={simulatedReply}
                 onChange={(e) => setSimulatedReply(e.target.value)}
-                placeholder="Paste an email reply from a prospect to test intent classification..."
                 required
               />
             </div>
 
-            <Button
+            <button
               type="submit"
               disabled={simulating || !simulatedReply.trim()}
-              loading={simulating}
-              variant="primary"
-              icon={<Sparkles className="w-4 h-4" />}
+              className="btn btn-primary"
+              style={{ alignSelf: 'flex-start', minWidth: 200 }}
             >
-              Classify & Advance CRM Pipeline
-            </Button>
+              {simulating ? <Spinner size={16} /> : '⚡ Classify & Process Inbound Reply'}
+            </button>
           </form>
 
           {/* Simulation Result Output */}
           {simulationResult && (
-            <div className="mt-6 p-5 bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-100 rounded-2xl">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-blue-100">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🎯</span>
-                  <div>
-                    <span className="text-xs text-slate-500 font-medium">Detected Intent:</span>
-                    <h4 className="text-base font-extrabold text-blue-600">
-                      {simulationResult.classification?.intent}
-                    </h4>
-                  </div>
-                </div>
-                <Badge variant="indigo" size="sm">
-                  {Math.round((simulationResult.classification?.confidence || 0.95) * 100)}% Confidence Score
-                </Badge>
+            <div style={{ marginTop: 24, padding: 18, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <span style={{ fontSize: 18 }}>🎯</span>
+                <h4 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                  Classification: <span style={{ color: '#2563eb' }}>{simulationResult.classification?.intent}</span>
+                </h4>
+                <span style={{ fontSize: 12, color: '#64748b' }}>
+                  ({Math.round((simulationResult.classification?.confidence || 0.9) * 100)}% confidence)
+                </span>
               </div>
 
-              <div className="space-y-2.5 text-xs">
-                <div className="text-slate-700">
-                  <strong className="text-slate-900">AI Reasoning: </strong>
-                  {simulationResult.classification?.reasoning}
-                </div>
-
-                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>
-                    Pipeline Stage Movement: <span className="line-through opacity-70">{simulationResult.oldStage}</span> &rarr;{' '}
-                    <strong className="text-emerald-700 font-extrabold">{simulationResult.newStage}</strong>
-                  </span>
-                </div>
-
-                {simulationResult.classification?.suggestedReply && (
-                  <div className="mt-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-                    <strong className="text-slate-900 text-xs block mb-1">
-                      Suggested Autonomous Reply Draft:
-                    </strong>
-                    <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
-                      {simulationResult.classification.suggestedReply}
-                    </p>
-                  </div>
-                )}
+              <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>
+                <strong>Reasoning: </strong> {simulationResult.classification?.reasoning}
               </div>
+
+              <div style={{ fontSize: 13, color: '#15803d', marginBottom: 12 }}>
+                <strong>CRM Stage Movement: </strong> {simulationResult.oldStage} → <strong>{simulationResult.newStage}</strong>
+              </div>
+
+              {simulationResult.classification?.suggestedReply && (
+                <div style={{ background: '#ffffff', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 12 }}>
+                  <strong style={{ color: '#0f172a' }}>Suggested AI Response Draft:</strong>
+                  <div style={{ marginTop: 4, color: '#334155' }}>{simulationResult.classification.suggestedReply}</div>
+                </div>
+              )}
             </div>
           )}
-        </Card>
+        </div>
       )}
 
       {/* TAB 3: Email Delivery Logs */}
       {activeTab === 'email' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard
-              icon={<Send className="w-5 h-5 text-blue-600" />}
-              label="Total Dispatches"
-              value={emailStats.totalAll || 0}
-            />
-            <StatCard
-              icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-              label="Delivered"
-              value={emailStats.totalSent || 0}
-            />
-            <StatCard
-              icon={<AlertTriangle className="w-5 h-5 text-red-600" />}
-              label="Delivery Failures"
-              value={emailStats.totalFailed || 0}
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+            <StatCard icon="✉️" label="Total Dispatches" value={emailStats.totalAll || 0} />
+            <StatCard icon="✅" label="Delivered" value={emailStats.totalSent || 0} />
+            <StatCard icon="❌" label="Delivery Failures" value={emailStats.totalFailed || 0} />
           </div>
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Dispatches & Anti-Spam Deduplication</h3>
-                <p className="text-xs text-slate-500">Live delivery logs from Resend and custom SMTP providers</p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchEmailLogs}
-                icon={<RotateCcw className="w-3.5 h-3.5 text-slate-500" />}
-              >
-                Refresh
-              </Button>
-            </div>
+          <div className="card" style={{ padding: 20 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 14 }}>
+              Recent Dispatches & Anti-Spam Deduplication
+            </h3>
 
             {emailLoading ? (
-              <div className="flex justify-center p-12">
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
                 <Spinner size={32} />
               </div>
             ) : emailLogs.length === 0 ? (
-              <EmptyState
-                title="No outreach emails logged yet"
-                description="When the outreach engine or follow-up scheduler fires, all logs will appear here."
-              />
+              <EmptyState title="No emails logged yet" description="Outreach emails will be recorded here." />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="table-wrapper">
+                <table className="data-table">
                   <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider bg-slate-50/70">
-                      <th className="p-3">Recipient</th>
-                      <th className="p-3">Subject</th>
-                      <th className="p-3">Type</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3">Sent Time</th>
-                      <th className="p-3 text-right">Actions</th>
+                    <tr>
+                      <th>Recipient</th>
+                      <th>Subject</th>
+                      <th>Type</th>
+                      <th>Status</th>
+                      <th>Sent Time</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody>
                     {emailLogs.map((log) => (
-                      <tr key={log._id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="p-3 font-semibold text-slate-900">{log.recipient}</td>
-                        <td className="p-3 text-slate-600 max-w-xs truncate">{log.subject}</td>
-                        <td className="p-3 uppercase text-[11px] font-mono text-slate-500">{log.type}</td>
-                        <td className="p-3">
+                      <tr key={log._id}>
+                        <td style={{ fontWeight: 600 }}>{log.recipient}</td>
+                        <td style={{ fontSize: 12 }}>{log.subject}</td>
+                        <td style={{ fontSize: 11, textTransform: 'uppercase' }}>{log.type}</td>
+                        <td>
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              log.status === 'sent'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-red-50 text-red-700 border-red-200'
-                            }`}
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              background: log.status === 'sent' ? '#dcfce7' : '#fee2e2',
+                              color: log.status === 'sent' ? '#15803d' : '#b91c1c',
+                            }}
                           >
                             {log.status.toUpperCase()}
                           </span>
                         </td>
-                        <td className="p-3 text-slate-500">{formatDate(log.createdAt)}</td>
-                        <td className="p-3 text-right">
+                        <td style={{ fontSize: 11, color: '#64748b' }}>{formatDate(log.createdAt)}</td>
+                        <td>
                           {log.status === 'failed' && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
+                            <button
                               onClick={() => handleRetry(log._id)}
-                              loading={retryingId === log._id}
+                              disabled={retryingId === log._id}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: 11 }}
                             >
-                              Retry
-                            </Button>
+                              {retryingId === log._id ? 'Retrying...' : 'Retry'}
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -862,71 +438,55 @@ export default function AutomationPage() {
                 </table>
               </div>
             )}
-          </Card>
+          </div>
         </div>
       )}
 
       {/* TAB 4: Apify Scraper Tasks */}
       {activeTab === 'apify' && (
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Apify Crawler Job History</h3>
-              <p className="text-xs text-slate-500">Autonomous scraping jobs executing Google Places, SEO, and social enrichment</p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchApifyRuns}
-              icon={<RotateCcw className="w-3.5 h-3.5 text-slate-500" />}
-            >
-              Refresh
-            </Button>
-          </div>
+        <div className="card" style={{ padding: 20 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 14 }}>
+            Apify Crawler Run History
+          </h3>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="table-wrapper">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider bg-slate-50/70">
-                  <th className="p-3">Job ID</th>
-                  <th className="p-3">Actor / Crawler</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Extracted Leads</th>
-                  <th className="p-3">Created</th>
+                <tr>
+                  <th>Job ID</th>
+                  <th>Actor</th>
+                  <th>Status</th>
+                  <th>Results</th>
+                  <th>Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {apifyJobs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center p-8 text-slate-400">
-                      No Apify crawler runs recorded yet. Start a search on the Discovery page.
+              <tbody>
+                {apifyJobs.map((j) => (
+                  <tr key={j._id}>
+                    <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{j._id}</td>
+                    <td style={{ fontSize: 12 }}>{j.actorId}</td>
+                    <td>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          background: j.status === 'succeeded' ? '#dcfce7' : '#fee2e2',
+                          color: j.status === 'succeeded' ? '#15803d' : '#b91c1c',
+                        }}
+                      >
+                        {j.status.toUpperCase()}
+                      </span>
                     </td>
+                    <td style={{ fontSize: 12 }}>{j.resultsCount || 0}</td>
+                    <td style={{ fontSize: 11, color: '#64748b' }}>{formatDate(j.createdAt)}</td>
                   </tr>
-                ) : (
-                  apifyJobs.map((j) => (
-                    <tr key={j._id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="p-3 font-mono text-[11px] text-slate-700">{j._id}</td>
-                      <td className="p-3 font-semibold text-slate-900">{j.actorId}</td>
-                      <td className="p-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            j.status === 'succeeded'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-red-50 text-red-700 border-red-200'
-                          }`}
-                        >
-                          {j.status.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="p-3 font-semibold text-slate-800">{j.resultsCount || 0}</td>
-                      <td className="p-3 text-slate-500">{formatDate(j.createdAt)}</td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
     </AppLayout>
   );

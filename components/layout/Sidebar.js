@@ -2,61 +2,31 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Users,
-  Sparkles,
-  Kanban,
-  ShieldCheck,
-  CheckSquare,
-  Zap,
-  Bot,
-  Calendar,
-  FileText,
-  FileCheck,
-  FileSpreadsheet,
-  Receipt,
-  BarChart3,
-  SearchCode,
-  Swords,
-  Calculator,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  X,
-} from 'lucide-react';
 
 const navItems = [
-  { section: 'CORE CRM' },
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/leads', icon: Users, label: 'Leads' },
-  { href: '/discovery', icon: Sparkles, label: 'Discovery', badge: 'AI' },
-  { href: '/pipeline', icon: Kanban, label: 'Pipeline & Deals' },
-  { href: '/approvals', icon: ShieldCheck, label: 'Approvals', badgeCount: true },
-  
-  { section: 'ENGAGEMENT' },
-  { href: '/tasks', icon: CheckSquare, label: 'Tasks' },
-  { href: '/automation', icon: Zap, label: 'Automation & Crons' },
-  { href: '/chat', icon: Bot, label: 'AI Sales Agent' },
-  { href: '/meetings', icon: Calendar, label: 'Meetings' },
-
-  { section: 'COMMERCIAL' },
-  { href: '/proposals', icon: FileText, label: 'Proposals' },
-  { href: '/contracts', icon: FileCheck, label: 'Contracts' },
-  { href: '/quotations', icon: FileSpreadsheet, label: 'Quotations' },
-  { href: '/invoices', icon: Receipt, label: 'Invoices' },
-
+  { section: 'SALES ENGINE' },
+  { href: '/dashboard', icon: '⚡', label: 'Dashboard' },
+  { href: '/discovery', icon: '🎯', label: 'Lead Discovery', badge: 'AI' },
+  { href: '/leads', icon: '👥', label: 'Leads Directory' },
+  { href: '/pipeline', icon: '📊', label: '14-Stage Pipeline' },
+  { href: '/approvals', icon: '🛡️', label: 'Approval Center', badgeCount: true },
+  { section: 'AUTOMATION & OUTREACH' },
+  { href: '/chat', icon: '🤖', label: 'AI Sales Assistant' },
+  { href: '/proposals', icon: '📄', label: 'Proposals' },
+  { href: '/contracts', icon: '📝', label: 'Contracts' },
+  { href: '/quotations', icon: '💰', label: 'Quotations' },
+  { href: '/invoices', icon: '🧾', label: 'Invoices' },
+  { href: '/automation', icon: '⚡', label: 'Campaigns & Crons' },
   { section: 'INTELLIGENCE' },
-  { href: '/reports', icon: BarChart3, label: 'Reports & Analytics' },
-  { href: '/audit', icon: SearchCode, label: 'Website Audit' },
-  { href: '/competitor', icon: Swords, label: 'Competitor Intel' },
-  { href: '/estimator', icon: Calculator, label: 'Cost Estimator' },
-
-  { section: 'SYSTEM' },
-  { href: '/settings', icon: Settings, label: 'Settings & APIs' },
+  { href: '/audit', icon: '🔍', label: 'Website Audit' },
+  { href: '/competitor', icon: '⚔️', label: 'Competitor Intel' },
+  { href: '/estimator', icon: '🧮', label: 'Cost Estimator' },
+  { href: '/meetings', icon: '📅', label: 'Meetings' },
+  { section: 'CONFIGURATION' },
+  { href: '/settings', icon: '⚙️', label: 'Settings & APIs' },
 ];
 
-export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, toggleCollapse }) {
+export default function Sidebar() {
   const pathname = usePathname();
   const [pendingApprovals, setPendingApprovals] = useState(0);
 
@@ -71,148 +41,119 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, togg
       } catch {}
     }
     fetchCounts();
-    const interval = setInterval(fetchCounts, 20000);
+    const interval = setInterval(fetchCounts, 15000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
-      <nav className="sidebar-nav flex flex-col justify-between">
-        <div>
-          {/* Logo & Mobile Close */}
-          <div className="sidebar-logo flex items-center justify-between pb-3 mb-3 border-b border-slate-200/80">
-            <Link
-              href="/dashboard"
-              onClick={onCloseMobile}
-              className="flex items-center gap-2.5 no-underline overflow-hidden"
-              title="LeadAI Pro"
+    <aside className="sidebar">
+      <nav className="sidebar-nav">
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 20,
+                flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
+              }}
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-sm shadow-blue-500/30">
-                <Sparkles className="w-5 h-5" />
+              ⚡
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+                LeadAI <span style={{ color: '#2563eb' }}>Pro</span>
               </div>
-              {!isCollapsed && (
-                <div className="overflow-hidden whitespace-nowrap">
-                  <div className="text-sm font-black text-slate-900 tracking-tight">
-                    LeadAI <span className="text-blue-600">Pro</span>
-                  </div>
-                  <div className="text-[10px] text-slate-500 font-medium leading-none">Enterprise Sales CRM</div>
-                </div>
-              )}
-            </Link>
-
-            {/* Mobile close button */}
-            <button
-              onClick={onCloseMobile}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-              aria-label="Close sidebar"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Navigation Links */}
-          <div className="space-y-0.5">
-            {navItems.map((item, i) => {
-              if (item.section) {
-                if (isCollapsed) {
-                  return (
-                    <div
-                      key={i}
-                      className="w-full my-2 border-t border-slate-100 dark:border-slate-800"
-                      title={item.section}
-                    />
-                  );
-                }
-                return (
-                  <div
-                    key={i}
-                    className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase px-2 pt-3 pb-1"
-                  >
-                    {item.section}
-                  </div>
-                );
-              }
-
-              const Icon = item.icon;
-              const isActive =
-                pathname === item.href ||
-                (item.href !== '/dashboard' && pathname?.startsWith(item.href));
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onCloseMobile}
-                  className={`group relative flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-blue-50/90 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-semibold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
-                  }`}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <Icon
-                    className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                      isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 group-hover:text-slate-700'
-                    }`}
-                  />
-
-                  {!isCollapsed && (
-                    <span className="flex-1 truncate tracking-tight">{item.label}</span>
-                  )}
-
-                  {/* AI Badge */}
-                  {!isCollapsed && item.badge && (
-                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200">
-                      {item.badge}
-                    </span>
-                  )}
-
-                  {/* Approval Alert Badge */}
-                  {item.badgeCount && pendingApprovals > 0 && (
-                    <span
-                      className={`${
-                        isCollapsed
-                          ? 'absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white'
-                          : 'text-[11px] font-bold px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 border border-red-200'
-                      }`}
-                    >
-                      {!isCollapsed && pendingApprovals}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>AI Sales Automation</div>
+            </div>
+          </Link>
         </div>
 
-        {/* Footer Admin Card & Collapse Toggle */}
-        <div className="pt-3 mt-4 border-t border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between gap-2 p-1.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/50">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                S
+        {/* Navigation Items */}
+        {navItems.map((item, i) => {
+          if (item.section) {
+            return (
+              <div key={i} className="nav-section" style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.06em', marginTop: 16, marginBottom: 4, padding: '0 12px' }}>
+                {item.section}
               </div>
-              {!isCollapsed && (
-                <div className="overflow-hidden truncate">
-                  <div className="text-xs font-bold text-slate-800 truncate">Saif</div>
-                  <div className="text-[10px] text-slate-400 truncate">Administrator</div>
-                </div>
-              )}
-            </div>
-
-            {/* Desktop Collapse Toggle */}
-            <button
-              onClick={toggleCollapse}
-              className="hidden lg:flex p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-all shrink-0"
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            );
+          }
+          const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nav-item ${isActive ? 'active' : ''}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '9px 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: isActive ? 600 : 500,
+                color: isActive ? '#1e40af' : '#475569',
+                background: isActive ? '#eff6ff' : 'transparent',
+                marginBottom: 2,
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
             >
-              {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-            </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 15 }}>{item.icon}</span>
+                <span>{item.label}</span>
+              </div>
+
+              {item.badge && (
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#dbeafe', color: '#1d4ed8' }}>
+                  {item.badge}
+                </span>
+              )}
+
+              {item.badgeCount && pendingApprovals > 0 && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: '#fee2e2', color: '#b91c1c' }}>
+                  {pendingApprovals}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+
+        {/* Footer Admin Profile */}
+        <div style={{ marginTop: 'auto', paddingTop: 14, borderTop: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px' }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 13,
+                fontWeight: 700,
+                color: 'white',
+              }}
+            >
+              S
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Saif (CRM Owner)
+              </div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>Executive Admin</div>
+            </div>
           </div>
         </div>
       </nav>
     </aside>
   );
 }
-

@@ -2,30 +2,7 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { toast } from '@/components/ui/Toaster';
-import { Button, Badge, Card, CardHeader, CardTitle, CardContent, Spinner } from '@/components/ui/index';
-import {
-  KeyRound,
-  ShieldCheck,
-  Building2,
-  Mail,
-  Sliders,
-  FileCode,
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  Save,
-  Send,
-  Sparkles,
-  Bot,
-  MapPin,
-  Lock,
-  Globe,
-  DollarSign,
-  AlertCircle,
-  Clock,
-  Briefcase,
-  Layers,
-} from 'lucide-react';
+import { Spinner } from '@/components/ui/index';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('providers');
@@ -117,7 +94,7 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('Settings synchronized and saved securely!');
+        toast.success('Settings updated and synced securely!');
       } else {
         toast.error(data.message || 'Failed to save settings');
       }
@@ -158,18 +135,18 @@ export default function SettingsPage() {
   }
 
   const tabs = [
-    { id: 'providers', label: 'API Keys & Providers', icon: KeyRound, desc: 'Google Places, Apify, OpenAI' },
-    { id: 'automations', label: 'Approvals & Safeguards', icon: ShieldCheck, desc: 'Human gating & safety rules' },
-    { id: 'company', label: 'Agency Profile & Catalog', icon: Building2, desc: 'Company info & pricing list' },
-    { id: 'email', label: 'Email Infrastructure', icon: Mail, desc: 'Resend, SMTP & signatures' },
-    { id: 'scoring', label: 'AI Scoring Weights', icon: Sliders, desc: '0-100 algorithmic weights' },
-    { id: 'env', label: 'Environment Config', icon: FileCode, desc: 'Variables reference' },
+    { id: 'providers', label: '🎯 Lead Providers & APIs', icon: '🔑' },
+    { id: 'automations', label: '🛡️ Approvals & Automations', icon: '⚡' },
+    { id: 'company', label: '🏢 Business Profile & Services', icon: '🏢' },
+    { id: 'email', label: '✉️ Email & Resend', icon: '✉️' },
+    { id: 'scoring', label: '🎯 AI Scoring Weights', icon: '🎯' },
+    { id: 'env', label: '📄 Environment Config', icon: '📄' },
   ];
 
   if (loading) {
     return (
       <AppLayout title="Platform Settings" subtitle="System configuration and AI tuning">
-        <div className="flex justify-center p-20">
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
           <Spinner size={40} />
         </div>
       </AppLayout>
@@ -179,546 +156,465 @@ export default function SettingsPage() {
   return (
     <AppLayout
       title="Platform Settings & Configurations"
-      subtitle="Manage external credentials, approval gating, business profile, and AI lead scoring weights"
+      subtitle="Manage Google Places API, Apify Scrapers, Resend credentials, Services catalog, and Approval rules"
     >
-      {/* Settings Container: Two Column SaaS layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left Secondary Navigation Rail */}
-        <div className="lg:col-span-1 space-y-1">
-          <div className="p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80 space-y-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full text-left p-3 rounded-xl transition-all cursor-pointer flex items-center gap-3 ${
-                    isActive
-                      ? 'bg-white text-blue-600 shadow-sm shadow-slate-200/50 font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 font-medium'
-                  }`}
-                >
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      isActive ? 'bg-blue-50 text-blue-600' : 'bg-slate-200/60 text-slate-500'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs truncate">{tab.label}</div>
-                    <div className="text-[10px] text-slate-400 font-normal truncate">{tab.desc}</div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="pt-3">
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              loading={saving}
-              variant="primary"
-              className="w-full"
-              icon={<Save className="w-4 h-4" />}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        {/* Navigation Tabs */}
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`btn ${activeTab === tab.id ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+              style={{ fontWeight: activeTab === tab.id ? 700 : 500 }}
             >
-              Save Configurations
-            </Button>
-          </div>
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Right Content Panel */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* TAB 1: API Keys & Providers */}
-          {activeTab === 'providers' && (
-            <Card className="p-6">
-              <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">External API Integrations</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Credentials are stored server-side with zero browser exposure.
-                  </p>
+        {/* Global Save Button */}
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm" style={{ padding: '8px 24px' }}>
+          {saving ? <Spinner size={16} /> : '💾 Save Settings'}
+        </button>
+      </div>
+
+      <div style={{ maxWidth: 960 }}>
+        {/* Tab 1: Lead Providers & APIs */}
+        {activeTab === 'providers' && (
+          <div className="card" style={{ padding: 28 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+              🔑 External API Integrations (Masked & Protected)
+            </h3>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+              Keys are stored securely server-side and never broadcast to browser environments.
+            </p>
+
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Google Places API */}
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="input-label" style={{ fontWeight: 700 }}>Google Maps & Places API Key</label>
+                  {settings.isEnvConfigured?.google && (
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active in .env.local ✅</span>
+                  )}
                 </div>
-                <Badge variant="indigo" size="sm">Masked & Protected</Badge>
-              </div>
-
-              <form onSubmit={handleSave} className="space-y-6">
-                {/* Google Places API */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Google Maps & Places API Key
-                    </label>
-                    {settings.isEnvConfigured?.google && (
-                      <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Active in .env.local
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type={showGoogleKey ? 'text' : 'password'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-                      placeholder="AIzaSy..."
-                      value={settings.googlePlacesApiKey || ''}
-                      onChange={(e) => setSettings({ ...settings, googlePlacesApiKey: e.target.value })}
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShowGoogleKey(!showGoogleKey)}
-                      icon={showGoogleKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    >
-                      {showGoogleKey ? 'Hide' : 'Show'}
-                    </Button>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Powers GooglePlacesProvider for local discovery, rating evaluations, and direct phone enrichment.
-                  </p>
-                </div>
-
-                {/* Apify API Token */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Apify Crawler API Token
-                    </label>
-                    {settings.isEnvConfigured?.apify && (
-                      <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Active in .env.local
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type={showApifyToken ? 'text' : 'password'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-                      placeholder="apify_api_..."
-                      value={settings.apifyApiToken || ''}
-                      onChange={(e) => setSettings({ ...settings, apifyApiToken: e.target.value })}
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShowApifyToken(!showApifyToken)}
-                      icon={showApifyToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    >
-                      {showApifyToken ? 'Hide' : 'Show'}
-                    </Button>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Powers automated deep scraping of websites, contact info extractors, and competitor analysis.
-                  </p>
-                </div>
-
-                {/* OpenAI API Key */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      OpenAI API Key
-                    </label>
-                    {settings.isEnvConfigured?.openai && (
-                      <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Active in .env.local
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type={showApiKey ? 'text' : 'password'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-                      placeholder="sk-proj-..."
-                      value={settings.openaiApiKey || ''}
-                      onChange={(e) => setSettings({ ...settings, openaiApiKey: e.target.value })}
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      icon={showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    >
-                      {showApiKey ? 'Hide' : 'Show'}
-                    </Button>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Synthesizes hyper-personalized cold outreach emails, generates proposals, and classifies replies.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Flagship LLM Model
-                  </label>
-                  <select
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={settings.openaiModel || 'gpt-4o'}
-                    onChange={(e) => setSettings({ ...settings, openaiModel: e.target.value })}
-                  >
-                    <option value="gpt-4o">GPT-4o (Recommended: Flagship Reasoning & Fast JSON Synthesis)</option>
-                    <option value="gpt-4o-mini">GPT-4o Mini (Ultra Fast & Budget-Friendly)</option>
-                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                  </select>
-                </div>
-              </form>
-            </Card>
-          )}
-
-          {/* TAB 2: Approvals & Safeguards */}
-          {activeTab === 'automations' && (
-            <Card className="p-6">
-              <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Commercial Safety & Approval Gating</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Enforce human-in-the-loop authorization before outreach dispatches or contract generation.
-                  </p>
-                </div>
-                <Badge variant="warning" size="sm">Safety Gating</Badge>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  {
-                    key: 'requireApprovalForOutreach',
-                    label: 'Require Human Approval for AI Outreach Messages',
-                    desc: 'All cold emails and personalized follow-ups stay in "Approval Required" status until authorized.',
-                  },
-                  {
-                    key: 'requireApprovalForProposals',
-                    label: 'Require Human Approval for Proposals',
-                    desc: 'Auto-generated proposals remain in DRAFT status and require explicit review before delivery.',
-                  },
-                  {
-                    key: 'requireApprovalForContracts',
-                    label: 'Require Human Approval for Legal Contracts',
-                    desc: 'Contracts generated on CLOSED WON stage require verification before sending to client.',
-                  },
-                  {
-                    key: 'autoCreateProposalOnInterested',
-                    label: 'Auto-Draft Proposal when Lead becomes "Interested"',
-                    desc: 'Prepares scope, timeline, and pricing in DRAFT as soon as positive reply intent is detected.',
-                  },
-                  {
-                    key: 'autoCreateContractOnClosedWon',
-                    label: 'Auto-Draft Contract on "Closed Won"',
-                    desc: 'Generates agreement document in DRAFT as soon as a deal reaches Closed Won stage.',
-                  },
-                  {
-                    key: 'notifyOwnerOnContractGenerated',
-                    label: 'Immediate CRM Owner Notification on Contract Creation',
-                    desc: 'Sends instant alert with View, Download PDF, and Send options to deal owner.',
-                  },
-                  {
-                    key: 'enableFollowUpSequences',
-                    label: 'Enable 5-Step Automated Follow-Up Sequences',
-                    desc: 'Schedules 7-day cadence follow-ups after initial outreach is approved and sent.',
-                  },
-                  {
-                    key: 'autoStopFollowUpOnReply',
-                    label: 'Automatic Killswitch on Prospect Reply or Unsubscribe',
-                    desc: 'Instantly halts all pending follow-ups when prospect replies, unsubscribes, or closes.',
-                  },
-                ].map((item) => (
-                  <label
-                    key={item.key}
-                    className="flex items-start gap-3.5 p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={Boolean(settings.automations?.[item.key])}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          automations: {
-                            ...settings.automations,
-                            [item.key]: e.target.checked,
-                          },
-                        })
-                      }
-                      className="w-4 h-4 mt-0.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                    />
-                    <div>
-                      <div className="text-xs font-bold text-slate-900">{item.label}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">{item.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* TAB 3: Business Profile & Services Catalog */}
-          {activeTab === 'company' && (
-            <div className="space-y-6">
-              <Card className="p-6">
-                <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900">Agency Commercial Identity</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Business information automatically embedded into AI generated proposals and contracts.
-                    </p>
-                  </div>
-                  <Badge variant="primary" size="sm">Brand Identity</Badge>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Agency / Business Name
-                    </label>
-                    <input
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={settings.companyName || ''}
-                      onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Official Outreach Email
-                    </label>
-                    <input
-                      type="email"
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={settings.companyEmail || ''}
-                      onChange={(e) => setSettings({ ...settings, companyEmail: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Contact Phone
-                    </label>
-                    <input
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={settings.companyPhone || ''}
-                      onChange={(e) => setSettings({ ...settings, companyPhone: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Website URL
-                    </label>
-                    <input
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={settings.companyWebsite || ''}
-                      onChange={(e) => setSettings({ ...settings, companyWebsite: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Headquarters Address
-                    </label>
-                    <input
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={settings.companyAddress || ''}
-                      onChange={(e) => setSettings({ ...settings, companyAddress: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Default Outreach Email Signature
-                    </label>
-                    <textarea
-                      rows={3}
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                      value={settings.emailSignature || ''}
-                      onChange={(e) => setSettings({ ...settings, emailSignature: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              {/* Services Catalog */}
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900">Configured Services Catalog</h3>
-                    <p className="text-xs text-slate-500">Service packages matched with prospective gaps</p>
-                  </div>
-                  <Badge variant="neutral" size="sm">Catalog</Badge>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider bg-slate-50">
-                        <th className="p-3">Service Name</th>
-                        <th className="p-3">Base Price</th>
-                        <th className="p-3">Delivery Days</th>
-                        <th className="p-3">Description</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {(settings.services || []).map((srv, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/60">
-                          <td className="p-3 font-semibold text-slate-900">{srv.name}</td>
-                          <td className="p-3 font-bold text-blue-600">
-                            ${(srv.basePrice || 0).toLocaleString()} {srv.currency}
-                          </td>
-                          <td className="p-3 text-slate-600">{srv.deliveryDays || 14} days</td>
-                          <td className="p-3 text-slate-500 max-w-xs">{srv.description}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* TAB 4: Email Infrastructure */}
-          {activeTab === 'email' && (
-            <Card className="p-6">
-              <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Resend & SMTP Email Infrastructure</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    High-deliverability transactional email provider for pitches and client updates.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTestEmail}
-                  loading={testingEmail}
-                  icon={<Send className="w-3.5 h-3.5 text-slate-500" />}
-                >
-                  Send Test Verification Email
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Resend API Key
-                    </label>
-                    {settings.isEnvConfigured?.resend && (
-                      <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Active in .env.local
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type={showResendKey ? 'text' : 'password'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-                      placeholder="re_..."
-                      value={settings.resendApiKey || ''}
-                      onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShowResendKey(!showResendKey)}
-                      icon={showResendKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    >
-                      {showResendKey ? 'Hide' : 'Show'}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    From Email Address
-                  </label>
+                <div style={{ display: 'flex', gap: 8 }}>
                   <input
-                    type="email"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={settings.resendFromEmail || 'onboarding@resend.dev'}
-                    onChange={(e) => setSettings({ ...settings, resendFromEmail: e.target.value })}
+                    type={showGoogleKey ? 'text' : 'password'}
+                    className="input"
+                    placeholder="AIzaSy..."
+                    value={settings.googlePlacesApiKey || ''}
+                    onChange={(e) => setSettings({ ...settings, googlePlacesApiKey: e.target.value })}
                   />
-                  <p className="text-[11px] text-slate-500">
-                    Must be a verified sender domain in your Resend account.
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleKey(!showGoogleKey)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {showGoogleKey ? '🙈 Hide' : '👁️ Show'}
+                  </button>
+                </div>
+                <span style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  Used by GooglePlacesProvider for Places TextSearch, Place Details, ratings, and phone enrichment.
+                </span>
+              </div>
+
+              {/* Apify API Token */}
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="input-label" style={{ fontWeight: 700 }}>Apify API Token</label>
+                  {settings.isEnvConfigured?.apify && (
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active in .env.local ✅</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type={showApifyToken ? 'text' : 'password'}
+                    className="input"
+                    placeholder="apify_api_..."
+                    value={settings.apifyApiToken || ''}
+                    onChange={(e) => setSettings({ ...settings, apifyApiToken: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApifyToken(!showApifyToken)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {showApifyToken ? '🙈 Hide' : '👁️ Show'}
+                  </button>
+                </div>
+                <span style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  Used by ApifyProvider for crawling Google Places and deep website content analysis.
+                </span>
+              </div>
+
+              {/* OpenAI API Key */}
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="input-label" style={{ fontWeight: 700 }}>OpenAI API Key</label>
+                  {settings.isEnvConfigured?.openai && (
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active in .env.local ✅</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type={showApiKey ? 'text' : 'password'}
+                    className="input"
+                    placeholder="sk-proj-..."
+                    value={settings.openaiApiKey || ''}
+                    onChange={(e) => setSettings({ ...settings, openaiApiKey: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {showApiKey ? '🙈 Hide' : '👁️ Show'}
+                  </button>
+                </div>
+                <span style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  Powers AI Lead Scoring, Personalized Outreach drafts, and Proposal synthesis.
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label className="input-label">OpenAI Flagship Model</label>
+                <select
+                  className="input"
+                  value={settings.openaiModel || 'gpt-4o'}
+                  onChange={(e) => setSettings({ ...settings, openaiModel: e.target.value })}
+                >
+                  <option value="gpt-4o">GPT-4o (Recommended: Flagship Reasoning & Multimodal)</option>
+                  <option value="gpt-4o-mini">GPT-4o Mini (Ultra Fast & Cost Efficient)</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                </select>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Tab 2: Approvals & Automations */}
+        {activeTab === 'automations' && (
+          <div className="card" style={{ padding: 28 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+              🛡️ Human Approval Gating & Automation Rules
+            </h3>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+              Enforce commercial safety rules: Prevent sensitive emails, proposals, and contracts from auto-sending.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                {
+                  key: 'requireApprovalForOutreach',
+                  label: '🛡️ Require Human Approval for AI Outreach Messages',
+                  desc: 'All cold emails and personalized follow-ups will stay in "Approval Required" status until clicked.',
+                },
+                {
+                  key: 'requireApprovalForProposals',
+                  label: '📄 Require Human Approval for Proposals',
+                  desc: 'Auto-generated proposals remain in DRAFT status and require review before delivery.',
+                },
+                {
+                  key: 'requireApprovalForContracts',
+                  label: '📝 Require Human Approval for Contracts',
+                  desc: 'Legal contracts created on CLOSED WON remain in DRAFT status until explicitly authorized.',
+                },
+                {
+                  key: 'autoCreateProposalOnInterested',
+                  label: '🤖 Auto-Draft Proposal when Lead becomes "Interested"',
+                  desc: 'Prepares scope, timeline, and pricing in DRAFT as soon as positive reply intent is detected.',
+                },
+                {
+                  key: 'autoCreateContractOnClosedWon',
+                  label: '📝 Auto-Draft Contract on "Closed Won"',
+                  desc: 'Generates legal agreement document in DRAFT as soon as a deal reaches Closed Won stage.',
+                },
+                {
+                  key: 'notifyOwnerOnContractGenerated',
+                  label: '⚡ Immediate CRM Owner Notification on Contract Creation',
+                  desc: 'Sends prompt alert with View, Download PDF, and Send options to CRM owner.',
+                },
+                {
+                  key: 'enableFollowUpSequences',
+                  label: '⏱️ Enable 5-Step Automated Follow-Up Sequences',
+                  desc: 'Schedules 7-day cadence follow-ups after initial outreach is approved and sent.',
+                },
+                {
+                  key: 'autoStopFollowUpOnReply',
+                  label: '🛑 Automatic Killswitch on Client Reply or Unsubscribe',
+                  desc: 'Instantly halts all pending follow-ups when prospect replies, unsubscribes, or closes.',
+                },
+              ].map((item) => (
+                <label
+                  key={item.key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 16,
+                    padding: 14,
+                    background: '#f8fafc',
+                    borderRadius: 8,
+                    border: '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(settings.automations?.[item.key])}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        automations: {
+                          ...settings.automations,
+                          [item.key]: e.target.checked,
+                        },
+                      })
+                    }
+                    style={{ width: 18, height: 18, marginTop: 3, accentColor: '#2563eb', flexShrink: 0 }}
+                  />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{item.label}</div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{item.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Business Profile & Services Catalog */}
+        {activeTab === 'company' && (
+          <div className="card" style={{ padding: 28 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+              🏢 Business Profile & Services Pricing Engine
+            </h3>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+              Configured company identity, services catalog, and email signatures are used by AI when generating proposals and contracts.
+            </p>
+
+            <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+              <div className="form-group">
+                <label className="input-label">Agency / Business Name</label>
+                <input
+                  className="input"
+                  value={settings.companyName || ''}
+                  onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="input-label">Official Outreach Email</label>
+                <input
+                  type="email"
+                  className="input"
+                  value={settings.companyEmail || ''}
+                  onChange={(e) => setSettings({ ...settings, companyEmail: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="input-label">Contact Phone</label>
+                <input
+                  className="input"
+                  value={settings.companyPhone || ''}
+                  onChange={(e) => setSettings({ ...settings, companyPhone: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="input-label">Website URL</label>
+                <input
+                  className="input"
+                  value={settings.companyWebsite || ''}
+                  onChange={(e) => setSettings({ ...settings, companyWebsite: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="input-label">Headquarters Address</label>
+                <input
+                  className="input"
+                  value={settings.companyAddress || ''}
+                  onChange={(e) => setSettings({ ...settings, companyAddress: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="input-label">Default Email Signature</label>
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={settings.emailSignature || ''}
+                  onChange={(e) => setSettings({ ...settings, emailSignature: e.target.value })}
+                />
+              </div>
+            </form>
+
+            {/* Services Catalog */}
+            <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>
+              Configurable Services Catalog
+            </h4>
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Service Name</th>
+                    <th>Base Price</th>
+                    <th>Delivery Days</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(settings.services || []).map((srv, idx) => (
+                    <tr key={idx}>
+                      <td style={{ fontWeight: 600 }}>{srv.name}</td>
+                      <td>${(srv.basePrice || 0).toLocaleString()} {srv.currency}</td>
+                      <td>{srv.deliveryDays || 14} days</td>
+                      <td style={{ fontSize: 12, color: '#64748b' }}>{srv.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Email & Resend */}
+        {activeTab === 'email' && (
+          <div className="card" style={{ padding: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>✉️ Resend & SMTP Email Infrastructure</h3>
+                <p style={{ fontSize: 13, color: '#64748b' }}>
+                  Dispatch outreach emails, proposals, and contracts with high deliverability.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleTestEmail}
+                disabled={testingEmail}
+                className="btn btn-secondary btn-sm"
+              >
+                {testingEmail ? <Spinner size={14} /> : '⚡ Dispatch Test Email'}
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="input-label" style={{ fontWeight: 700 }}>Resend API Key</label>
+                  {settings.isEnvConfigured?.resend && (
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active in .env.local ✅</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type={showResendKey ? 'text' : 'password'}
+                    className="input"
+                    placeholder="re_..."
+                    value={settings.resendApiKey || ''}
+                    onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResendKey(!showResendKey)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {showResendKey ? '🙈 Hide' : '👁️ Show'}
+                  </button>
                 </div>
               </div>
-            </Card>
-          )}
 
-          {/* TAB 5: AI Scoring Weights */}
-          {activeTab === 'scoring' && (
-            <Card className="p-6">
-              <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">AI Lead Scoring Engine Weights</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Customize how digital gaps and buying signals accumulate to compute 0–100 scores.
-                  </p>
+              <div className="form-group">
+                <label className="input-label">From Email Address</label>
+                <input
+                  className="input"
+                  value={settings.resendFromEmail || 'onboarding@resend.dev'}
+                  onChange={(e) => setSettings({ ...settings, resendFromEmail: e.target.value })}
+                />
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Tab 5: Lead Scoring Weights */}
+        {activeTab === 'scoring' && (
+          <div className="card" style={{ padding: 28 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+              🎯 AI Lead Scoring Weights (0–100 Engine)
+            </h3>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+              Tune the mathematical point contribution of digital gaps and buying signals.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {[
+                { key: 'websiteMissingWeight', label: '🚫 Website Missing Weight', default: 25 },
+                { key: 'poorWebsiteWeight', label: '⚠️ Outdated / Poor Website Weight', default: 20 },
+                { key: 'poorMobileWeight', label: '📱 Subpar Mobile Experience Weight', default: 10 },
+                { key: 'poorSeoWeight', label: '🔍 Weak SEO Architecture Weight', default: 10 },
+                { key: 'lowPerformanceWeight', label: '⚡ Slow TTFB / Performance Weight', default: 10 },
+                { key: 'highReviewCountWeight', label: '⭐ High Review Volume (15+ reviews)', default: 5 },
+                { key: 'strongCategoryWeight', label: '🏢 High-Ticket Business Category', default: 5 },
+                { key: 'publicEmailWeight', label: '✉️ Public Reachable Email Found', default: 5 },
+                { key: 'phoneAvailableWeight', label: '📞 Direct Telephone Reachable', default: 5 },
+                { key: 'buyingSignalWeight', label: '🎯 High Reputation with Digital Gap', default: 5 },
+              ].map((item) => (
+                <div key={item.key} style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{item.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#2563eb' }}>
+                      {settings.scoringWeights?.[item.key] ?? item.default} pts
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="40"
+                    value={settings.scoringWeights?.[item.key] ?? item.default}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        scoringWeights: {
+                          ...settings.scoringWeights,
+                          [item.key]: Number(e.target.value),
+                        },
+                      })
+                    }
+                    style={{ width: '100%', accentColor: '#2563eb' }}
+                  />
                 </div>
-                <Badge variant="indigo" size="sm">0-100 Algorithm</Badge>
-              </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  { key: 'websiteMissingWeight', label: 'Website Missing', default: 25 },
-                  { key: 'poorWebsiteWeight', label: 'Outdated / Poor Website', default: 20 },
-                  { key: 'poorMobileWeight', label: 'Subpar Mobile Experience', default: 10 },
-                  { key: 'poorSeoWeight', label: 'Weak SEO Architecture', default: 10 },
-                  { key: 'lowPerformanceWeight', label: 'Slow TTFB / Performance', default: 10 },
-                  { key: 'highReviewCountWeight', label: 'High Review Volume (15+ reviews)', default: 5 },
-                  { key: 'strongCategoryWeight', label: 'High-Ticket Business Category', default: 5 },
-                  { key: 'publicEmailWeight', label: 'Public Reachable Email Found', default: 5 },
-                  { key: 'phoneAvailableWeight', label: 'Direct Telephone Reachable', default: 5 },
-                  { key: 'buyingSignalWeight', label: 'High Reputation with Digital Gap', default: 5 },
-                ].map((item) => {
-                  const val = settings.scoringWeights?.[item.key] ?? item.default;
-                  return (
-                    <div key={item.key} className="p-4 bg-slate-50/70 border border-slate-200/80 rounded-xl space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-800">{item.label}</span>
-                        <span className="text-xs font-extrabold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
-                          {val} pts
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="40"
-                        value={val}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            scoringWeights: {
-                              ...settings.scoringWeights,
-                              [item.key]: Number(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full accent-blue-600 cursor-pointer"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          )}
+        {/* Tab 6: Environment Reference */}
+        {activeTab === 'env' && (
+          <div className="card" style={{ padding: 28 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>📄 Environment Configuration Template</h3>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+              All variables used by the LeadAI Pro platform.
+            </p>
 
-          {/* TAB 6: Environment Reference */}
-          {activeTab === 'env' && (
-            <Card className="p-6">
-              <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Environment Variables Reference</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Platform runtime configuration template for production deployment.
-                  </p>
-                </div>
-                <Badge variant="neutral" size="sm">.env.local</Badge>
-              </div>
-
-              <div className="bg-slate-900 text-slate-200 rounded-xl p-4 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed">
-                <pre className="text-sky-300">
+            <pre
+              style={{
+                background: '#0f172a',
+                color: '#38bdf8',
+                padding: 18,
+                borderRadius: 8,
+                fontSize: 13,
+                fontFamily: 'monospace',
+                lineHeight: 1.8,
+                overflowX: 'auto',
+              }}
+            >
 {`MONGODB_URI=mongodb://localhost:27017/ai-leads-platform
 OPENAI_API_KEY=sk-proj-your_openai_key
 OPENAI_MODEL=gpt-4o
@@ -728,11 +624,9 @@ RESEND_API_KEY=re_your_resend_api_key
 EMAIL_FROM=onboarding@resend.dev
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 JWT_SECRET=your_jwt_secret_key`}
-                </pre>
-              </div>
-            </Card>
-          )}
-        </div>
+            </pre>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
