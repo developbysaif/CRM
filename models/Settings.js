@@ -28,6 +28,14 @@ const SettingsSchema = new mongoose.Schema(
     resendApiKey: { type: String, default: '' },
     resendFromEmail: { type: String, default: 'onboarding@resend.dev' },
 
+    // WhatsApp Cloud API Configuration
+    whatsappAccessToken: { type: String, default: '' },
+    whatsappPhoneNumberId: { type: String, default: '' },
+    whatsappBusinessAccountId: { type: String, default: '' },
+
+    // Lead & Email Verification Configuration
+    verificationApiKey: { type: String, default: '' },
+
     // Company / Business Profile Information
     companyName: { type: String, default: 'LeadAI Pro Software Agency' },
     companyEmail: { type: String, default: 'sales@leadaipro.com' },

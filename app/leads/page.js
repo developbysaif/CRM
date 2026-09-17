@@ -6,10 +6,13 @@ import {
   Button, Card, Input, Select, Modal, Badge,
   LeadScoreBadge, StatusBadge, PriorityBadge, Pagination, EmptyState, LoadingSkeleton
 } from '@/components/ui/index';
+import ImportLeadsModal from '@/components/leads/ImportLeadsModal';
+import AutoGenerateLeadsModal from '@/components/leads/AutoGenerateLeadsModal';
 import {
   Search, Filter, Plus, Download, Upload, Trash2, 
   Eye, Edit3, MoreHorizontal, CheckSquare, Sparkles, 
-  Building2, Mail, Phone, Calendar, ArrowUpDown
+  Building2, Mail, Phone, Calendar, ArrowUpDown,
+  UploadCloud, ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Check
 } from 'lucide-react';
 
 export default function LeadsPage() {
@@ -24,6 +27,10 @@ export default function LeadsPage() {
   const [total, setTotal] = useState(0);
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isAutoGenerateModalOpen, setIsAutoGenerateModalOpen] = useState(false);
+  const [isVerifyingAll, setIsVerifyingAll] = useState(false);
+  const [verifyNotification, setVerifyNotification] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [newLead, setNewLead] = useState({
     name: '',
@@ -134,6 +141,30 @@ export default function LeadsPage() {
     document.body.removeChild(link);
   };
 
+  const handleVerifyAll = async () => {
+    setIsVerifyingAll(true);
+    setVerifyNotification(null);
+    try {
+      const res = await fetch('/api/leads/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allUnverified: true }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setVerifyNotification(data.message || 'Leads verified successfully.');
+        setTimeout(() => setVerifyNotification(null), 5000);
+        fetchLeads();
+      } else {
+        alert(data.message || 'Verification failed');
+      }
+    } catch {
+      alert('Verification network error');
+    } finally {
+      setIsVerifyingAll(false);
+    }
+  };
+
   return (
     <AppLayout>
       {/* Header Strip */}
@@ -143,11 +174,45 @@ export default function LeadsPage() {
             Leads Management
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Track, score, and move qualified business opportunities through the sales funnel.
+            Track, score, verify deliverability, and move qualified prospects through the funnel.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Import File Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            icon={UploadCloud}
+            onClick={() => setIsImportModalOpen(true)}
+          >
+            Import File
+          </Button>
+
+          {/* Auto-Generate Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            icon={Sparkles}
+            onClick={() => setIsAutoGenerateModalOpen(true)}
+            className="text-blue-600 border-blue-200 dark:border-blue-800 hover:bg-blue-50"
+          >
+            Auto-Generate
+          </Button>
+
+          {/* Batch Verify Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            icon={ShieldCheck}
+            loading={isVerifyingAll}
+            onClick={handleVerifyAll}
+            className="text-emerald-600 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50"
+          >
+            Verify Leads
+          </Button>
+
+          {/* Export CSV */}
           <Button
             variant="outline"
             size="sm"
@@ -157,6 +222,7 @@ export default function LeadsPage() {
             Export CSV
           </Button>
 
+          {/* Add Single Lead */}
           <Button
             variant="primary"
             size="sm"
@@ -167,6 +233,23 @@ export default function LeadsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Verification Notification Banner */}
+      {verifyNotification && (
+        <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center justify-between animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>{verifyNotification}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setVerifyNotification(null)}
+            className="text-emerald-600 hover:text-emerald-800 font-bold"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Filter & Search Bar */}
       <Card className="p-4 mb-6" hover={false}>
@@ -264,6 +347,7 @@ export default function LeadsPage() {
                 </th>
                 <th className="p-4">Contact & Company</th>
                 <th className="p-4">Contact Info</th>
+                <th className="p-4">Deliverability</th>
                 <th className="p-4">AI Score</th>
                 <th className="p-4">Pipeline Stage</th>
                 <th className="p-4">Priority</th>
@@ -274,13 +358,13 @@ export default function LeadsPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center">
+                  <td colSpan={9} className="p-8 text-center">
                     <LoadingSkeleton count={5} />
                   </td>
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center">
+                  <td colSpan={9} className="p-12 text-center">
                     <EmptyState
                       title="No matching leads"
                       description="Try clearing your filters or create a new prospect."
@@ -341,6 +425,27 @@ export default function LeadsPage() {
                           <Phone className="w-3 h-3 text-slate-400" />
                           <span>{lead.phone}</span>
                         </div>
+                      )}
+                    </td>
+
+                    {/* Deliverability / Verification Status */}
+                    <td className="p-4">
+                      {lead.verification?.status === 'valid' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title={lead.verification?.details}>
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> MX Valid
+                        </span>
+                      ) : lead.verification?.status === 'risky' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={lead.verification?.details}>
+                          <AlertTriangle className="w-3 h-3 text-amber-500" /> Risky
+                        </span>
+                      ) : lead.verification?.status === 'invalid' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300 border border-red-200 dark:border-red-800" title={lead.verification?.details}>
+                          <XCircle className="w-3 h-3 text-red-500" /> Invalid
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          Unverified
+                        </span>
                       )}
                     </td>
 
@@ -453,6 +558,20 @@ export default function LeadsPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Manual File Import Modal */}
+      <ImportLeadsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={fetchLeads}
+      />
+
+      {/* Automatic Lead Generation Modal */}
+      <AutoGenerateLeadsModal
+        isOpen={isAutoGenerateModalOpen}
+        onClose={() => setIsAutoGenerateModalOpen(false)}
+        onSuccess={fetchLeads}
+      />
     </AppLayout>
   );
 }

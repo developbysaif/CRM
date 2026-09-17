@@ -24,6 +24,9 @@ export default function SettingsPage() {
     smtpUser: 'outreach@leadai.pro',
     autoFollowUpDays: '7',
     autoGatingEnabled: true,
+    whatsappAccessToken: '',
+    whatsappPhoneNumberId: '',
+    verificationApiKey: '',
   });
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -140,6 +143,42 @@ export default function SettingsPage() {
                 onChange={(e) => setSettings({ ...settings, apifyApiToken: e.target.value })}
                 helper="Enables deep web crawling, email scraping, and technology stack detection."
               />
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2">
+                  WhatsApp Business Cloud API (Meta)
+                </h4>
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <Input
+                    label="Phone Number ID"
+                    placeholder="e.g. 10987654321"
+                    value={settings.whatsappPhoneNumberId}
+                    onChange={(e) => setSettings({ ...settings, whatsappPhoneNumberId: e.target.value })}
+                  />
+                  <Input
+                    label="Access Token"
+                    type="password"
+                    placeholder="EAA..."
+                    value={settings.whatsappAccessToken}
+                    onChange={(e) => setSettings({ ...settings, whatsappAccessToken: e.target.value })}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Optional. If left blank, the CRM automatically uses direct WhatsApp click-to-chat links (<code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">wa.me</code>) with pre-filled AI drafts.
+                </p>
+              </div>
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2">
+                  Lead & Email Deliverability Verification
+                </h4>
+                <Input
+                  label="Verification API Key (Optional)"
+                  type="password"
+                  placeholder="AbstractAPI / Hunter / ZeroBounce Key"
+                  value={settings.verificationApiKey}
+                  onChange={(e) => setSettings({ ...settings, verificationApiKey: e.target.value })}
+                  helper="Built-in DNS MX record resolution and disposable email filtering are always active for zero-cost verification."
+                />
+              </div>
             </div>
           )}
 

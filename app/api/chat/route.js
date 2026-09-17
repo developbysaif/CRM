@@ -244,13 +244,13 @@ export async function POST(request) {
     const body = await request.json();
     const { message, sessionId, collectedData = {} } = body;
 
-    if (!sessionId) return apiError('Session ID is required', 400);
+    const activeSessionId = sessionId || `session_default`;
 
     // Retrieve or create conversation
-    let conversation = await Conversation.findOne({ sessionId });
+    let conversation = await Conversation.findOne({ sessionId: activeSessionId });
     if (!conversation) {
       conversation = await Conversation.create({
-        sessionId,
+        sessionId: activeSessionId,
         messages: [{ role: 'assistant', content: INITIAL_GREETING }],
         collectedData: {},
         status: 'active',

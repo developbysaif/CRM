@@ -123,6 +123,19 @@ const LeadSchema = new mongoose.Schema(
     nextFollowUpDate: { type: Date, default: null },
     followUpCount: { type: Number, default: 0 },
 
+    // Lead & Deliverability Verification
+    verification: {
+      status: { type: String, enum: ['unverified', 'valid', 'risky', 'invalid'], default: 'unverified' },
+      emailValid: { type: Boolean, default: null },
+      mxValid: { type: Boolean, default: null },
+      isDisposable: { type: Boolean, default: false },
+      isRoleAccount: { type: Boolean, default: false },
+      phoneValid: { type: Boolean, default: null },
+      websiteValid: { type: Boolean, default: null },
+      verifiedAt: { type: Date, default: null },
+      details: { type: String, default: '' },
+    },
+
     // Assignments & Annotations
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     notes: { type: String, default: '' },

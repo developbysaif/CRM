@@ -10,7 +10,8 @@ import {
 import {
   ArrowLeft, Phone, Mail, FileText, Calendar, Clock, 
   Trash2, Edit3, Send, Sparkles, Building2, Globe, MapPin, 
-  CheckCircle2, AlertCircle, MessageSquare, History, UserCheck, Check
+  CheckCircle2, AlertCircle, MessageSquare, History, UserCheck, Check,
+  MessageCircle, ShieldCheck, AlertTriangle, XCircle, Loader2
 } from 'lucide-react';
 
 export default function LeadDetailPage({ params }) {
@@ -22,6 +23,7 @@ export default function LeadDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isGeneratingOutreach, setIsGeneratingOutreach] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [outreachDrafts, setOutreachDrafts] = useState(null);
   const [newNote, setNewNote] = useState('');
   const [notes, setNotes] = useState([]);
@@ -79,6 +81,44 @@ export default function LeadDetailPage({ params }) {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleVerifyLead = async () => {
+    setIsVerifying(true);
+    try {
+      const res = await fetch('/api/leads/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchLead();
+      } else {
+        alert(data.message || 'Verification failed');
+      }
+    } catch {
+      alert('Verification network error');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleWhatsAppLaunch = async () => {
+    if (!lead?.phone) return;
+    const cleanPhone = lead.phone.replace(/[^\d+]/g, '').replace(/^\+/, '');
+    const message = `Hi ${lead.name || 'there'}! Reaching out from LeadAI Pro regarding business solutions for ${lead.companyName || lead.company || 'your team'}. When is a good time for a quick chat?`;
+    const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+    try {
+      await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: lead.phone, message, leadId: id }),
+      });
+    } catch {}
+
+    window.open(waLink, '_blank');
   };
 
   const tabs = [
@@ -152,11 +192,23 @@ export default function LeadDetailPage({ params }) {
           {/* Quick Action Strip */}
           <div className="flex items-center gap-2 flex-wrap">
             {lead.phone && (
-              <a href={`tel:${lead.phone}`}>
-                <Button variant="outline" size="sm" icon={Phone}>
-                  Call
+              <>
+                <a href={`tel:${lead.phone}`}>
+                  <Button variant="outline" size="sm" icon={Phone}>
+                    Call
+                  </Button>
+                </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={MessageCircle}
+                  onClick={handleWhatsAppLaunch}
+                  className="text-emerald-600 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50"
+                  title="Launch WhatsApp Web chat with AI message"
+                >
+                  WhatsApp
                 </Button>
-              </a>
+              </>
             )}
             {lead.email && (
               <a href={`mailto:${lead.email}`}>
@@ -402,6 +454,64 @@ export default function LeadDetailPage({ params }) {
                 </span>
               </div>
             </div>
+          </Card>
+
+          {/* Deliverability & Verification Telemetry Card */}
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                Deliverability Verification
+              </h3>
+              {lead.verification?.status === 'valid' ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Verified
+                </span>
+              ) : lead.verification?.status === 'risky' ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 text-amber-500" /> Risky
+                </span>
+              ) : lead.verification?.status === 'invalid' ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300 border border-red-200 dark:border-red-800 flex items-center gap-1">
+                  <XCircle className="w-3 h-3 text-red-500" /> Invalid
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                  Unverified
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-3 text-xs mb-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500">DNS Mail Servers (MX)</span>
+                <span className={`font-bold ${lead.verification?.mxValid ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  {lead.verification?.mxValid === true ? 'Active & Resolving' : lead.verification?.mxValid === false ? 'No MX Records' : 'Unchecked'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500">Inbox Quality</span>
+                <span className="font-semibold text-slate-800 dark:text-white">
+                  {lead.verification?.isRoleAccount ? 'Generic Role Inbox' : lead.verification?.isDisposable ? 'Disposable / Temp' : 'Personal Corporate'}
+                </span>
+              </div>
+              {lead.verification?.details && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  {lead.verification.details}
+                </p>
+              )}
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              icon={isVerifying ? Loader2 : ShieldCheck}
+              loading={isVerifying}
+              onClick={handleVerifyLead}
+              className="w-full text-blue-600 border-blue-200 dark:border-blue-800 hover:bg-blue-50"
+            >
+              {isVerifying ? 'Running MX & Deliverability Audit...' : 'Verify Deliverability Now'}
+            </Button>
           </Card>
         </div>
       </div>
