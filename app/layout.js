@@ -1,18 +1,16 @@
-import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta' });
-
 export const metadata = {
-  title: 'LeadAI Pro — AI Lead Generation & Sales Automation',
-  description: 'Enterprise-grade AI-powered lead generation, CRM, and sales automation platform',
+  title: 'LeadAI Pro — Headless CRM API Server',
+  description: 'Enterprise-grade REST API backend for lead discovery, scoring, outreach, and contract automation',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jakarta.variable}`} suppressHydrationWarning>
-      <body suppressHydrationWarning>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning style={{ margin: 0, padding: 0, background: '#090d16' }}>
+        {children}
+      </body>
     </html>
   );
 }
