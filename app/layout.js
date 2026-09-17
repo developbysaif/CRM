@@ -1,14 +1,14 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'LeadAI Pro — Headless CRM API Server',
-  description: 'Enterprise-grade REST API backend for lead discovery, scoring, outreach, and contract automation',
+  title: 'LeadAI Pro — Enterprise SaaS CRM Platform',
+  description: 'Enterprise AI-powered lead generation, CRM, outreach, and contract automation platform',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning style={{ margin: 0, padding: 0, background: '#090d16' }}>
+      <body suppressHydrationWarning>
         {children}
       </body>
     </html>
