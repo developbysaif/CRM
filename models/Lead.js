@@ -136,6 +136,14 @@ const LeadSchema = new mongoose.Schema(
       details: { type: String, default: '' },
     },
 
+    // Token-Optimized AI Outreach Draft
+    personalizedEmail: {
+      subject: { type: String, default: '' },
+      body: { type: String, default: '' },
+      angle: { type: String, default: '' },
+      generatedAt: { type: Date, default: null },
+    },
+
     // Assignments & Annotations
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     notes: { type: String, default: '' },

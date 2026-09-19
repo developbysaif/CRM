@@ -14,12 +14,11 @@ const SettingsSchema = new mongoose.Schema(
 
     // OpenAI Configuration
     openaiApiKey: { type: String, default: '' },
-    openaiModel: { type: String, default: 'gpt-4o' },
+    openaiModel: { type: String, default: 'gpt-4o-mini' },
 
-    // Google Places API Configuration
+    // Google Places & Scraping Configuration (Firecrawl & Apify)
     googlePlacesApiKey: { type: String, default: '' },
-
-    // Apify Configuration (Backend only)
+    firecrawlApiKey: { type: String, default: '' },
     apifyApiToken: { type: String, default: '' },
     apifyDefaultActor: { type: String, default: 'compass/crawler-google-places' },
     apifyWebsiteActor: { type: String, default: 'apify/website-content-crawler' },

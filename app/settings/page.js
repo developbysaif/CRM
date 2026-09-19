@@ -17,6 +17,8 @@ export default function SettingsPage() {
     companyName: 'LeadAI Pro Enterprise',
     adminEmail: 'saif@leadai.pro',
     openaiApiKey: 'sk-proj-****************',
+    openaiModel: 'gpt-4o-mini',
+    firecrawlApiKey: '',
     googlePlacesApiKey: 'AIzaSy****************',
     apifyApiToken: 'apify_api_****************',
     smtpHost: 'smtp.gmail.com',
@@ -122,12 +124,39 @@ export default function SettingsPage() {
           {/* API Keys Tab */}
           {activeTab === 'apikeys' && (
             <div className="space-y-4 max-w-xl">
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="OpenAI API Key"
+                  type="password"
+                  value={settings.openaiApiKey}
+                  onChange={(e) => setSettings({ ...settings, openaiApiKey: e.target.value })}
+                  helper="Used for cold email copywriting and proposal drafting."
+                />
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    AI Model (Token Optimization)
+                  </label>
+                  <select
+                    value={settings.openaiModel || 'gpt-4o-mini'}
+                    onChange={(e) => setSettings({ ...settings, openaiModel: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="gpt-4o-mini">gpt-4o-mini (Recommended: 95% Lower Cost)</option>
+                    <option value="gpt-4o">gpt-4o (Higher Cost Enterprise)</option>
+                    <option value="gpt-3.5-turbo">gpt-3.5-turbo (Legacy)</option>
+                  </select>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    gpt-4o-mini delivers identical high conversion with minimal token burn.
+                  </p>
+                </div>
+              </div>
               <Input
-                label="OpenAI API Key"
+                label="Firecrawl API Key (Optional)"
                 type="password"
-                value={settings.openaiApiKey}
-                onChange={(e) => setSettings({ ...settings, openaiApiKey: e.target.value })}
-                helper="Powers autonomous cold email generation, reply intent classification, and proposal synthesis."
+                placeholder="fc-..."
+                value={settings.firecrawlApiKey}
+                onChange={(e) => setSettings({ ...settings, firecrawlApiKey: e.target.value })}
+                helper="Enables clean, LLM-ready markdown website scraping with minimal token consumption."
               />
               <Input
                 label="Google Places API Key"

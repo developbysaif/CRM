@@ -89,7 +89,7 @@ export default function AutoGenerateLeadsModal({ isOpen, onClose, onSuccess }) {
         {!resultSummary ? (
           <form onSubmit={handleGenerate} className="space-y-4">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Aura AI scans live Google Maps, web directories, and business registries to discover, audit, score, and import high-intent prospects into your CRM.
+              Scrapes Google Maps places, prunes website intelligence (Firecrawl/Apify), verifies email DNS MX deliverability, scores intent (0-100), and stages token-optimized outreach drafts in the Human Approval Center.
             </p>
 
             {/* Industry Selector */}
@@ -222,10 +222,10 @@ export default function AutoGenerateLeadsModal({ isOpen, onClose, onSuccess }) {
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <h4 className="text-base font-bold text-emerald-900 dark:text-emerald-200">
-              Auto-Lead Generation Complete!
+              Workflow Execution Complete!
             </h4>
             <p className="text-xs text-slate-600 dark:text-slate-300">
-              Successfully queried {provider.toUpperCase()}, normalized data, ran 5-key de-duplication, and computed 0-100 intent scores.
+              Scraped data, validated DNS MX deliverability, scored leads (0-100), and staged token-optimized AI cold outreach drafts for your approval.
             </p>
             <div className="flex items-center justify-center gap-6 text-xs text-slate-600 dark:text-slate-300 py-2">
               <div>
@@ -235,16 +235,27 @@ export default function AutoGenerateLeadsModal({ isOpen, onClose, onSuccess }) {
                 <span>New Leads Added</span>
               </div>
               <div>
+                <span className="text-2xl font-black text-blue-600 dark:text-blue-400 block">
+                  {resultSummary.queuedOutreachCount || 0}
+                </span>
+                <span>Drafts in Approval</span>
+              </div>
+              <div>
                 <span className="text-2xl font-black text-amber-600 block">
                   {resultSummary.duplicatesDetected || 0}
                 </span>
                 <span>Duplicates Filtered</span>
               </div>
             </div>
-            <div className="pt-2">
-              <Button size="sm" onClick={handleClose}>
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Button size="sm" variant="outline" onClick={handleClose}>
                 View Newly Added Leads
               </Button>
+              {resultSummary.queuedOutreachCount > 0 && (
+                <Button size="sm" variant="primary" onClick={() => { handleClose(); window.location.href = '/approvals'; }}>
+                  Review Outreach Drafts
+                </Button>
+              )}
             </div>
           </div>
         )}

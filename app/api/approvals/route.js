@@ -38,7 +38,8 @@ export async function POST(request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { action, id, ids, reason, sendNow = true } = body;
+    const id = body.id || body.approvalId;
+    const { action, ids, reason, sendNow = true } = body;
 
     if (action === 'approve') {
       if (!id) return apiError('Approval ID is required', 400);

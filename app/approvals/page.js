@@ -92,10 +92,10 @@ export default function ApprovalsPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {item.type === 'cold_email' ? 'Outbound Cold Email' : 'Contract / Proposal Draft'}
+                      {item.type === 'message' || item.type === 'cold_email' ? 'Outbound Cold Email' : item.type === 'proposal' ? 'AI Proposal Draft' : 'Contract / Agreement Draft'}
                     </h3>
                     <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-                      <span>Recipient: {item.recipientEmail || 'prospect@business.com'}</span>
+                      <span>Recipient: {item.recipient || item.recipientEmail || 'prospect@business.com'}</span>
                       <span>• Lead: {item.leadId?.companyName || item.leadId?.name || 'Prospect'}</span>
                     </div>
                   </div>
@@ -125,10 +125,10 @@ export default function ApprovalsPage() {
 
               <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-xs">
                 <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  Subject: {item.payload?.subject || 'Enterprise Web Modernization Opportunity'}
+                  Subject: {item.subject || item.payload?.subject || 'Enterprise Web Modernization Opportunity'}
                 </span>
                 <p className="text-slate-600 dark:text-slate-400 whitespace-pre-line leading-relaxed">
-                  {item.payload?.body || item.payload?.content || 'Preview of AI generated message payload...'}
+                  {item.content || item.payload?.body || item.payload?.content || 'Preview of AI generated message payload...'}
                 </p>
               </div>
             </Card>
