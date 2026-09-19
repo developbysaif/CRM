@@ -98,7 +98,7 @@ const SettingsSchema = new mongoose.Schema(
       enableFollowUpSequences: { type: Boolean, default: true },
       autoStopFollowUpOnReply: { type: Boolean, default: true },
       dailyOutreachLimit: { type: Number, default: 50 },
-      followUpIntervalDays: { type: Number, default: 7 },
+      followUpIntervalDays: { type: Number, default: 6 },
       maxFollowUps: { type: Number, default: 5 },
     },
   },

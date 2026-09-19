@@ -24,7 +24,7 @@ export default function SettingsPage() {
     smtpHost: 'smtp.gmail.com',
     smtpPort: '587',
     smtpUser: 'outreach@leadai.pro',
-    autoFollowUpDays: '7',
+    autoFollowUpDays: '6',
     autoGatingEnabled: true,
     whatsappAccessToken: '',
     whatsappPhoneNumberId: '',
