@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/components/providers/AuthProvider';
 import AppLayout from '@/components/layout/AppLayout';
 import {
   Button, Card, CardHeader, CardTitle, CardContent, 
@@ -12,10 +13,12 @@ import {
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function SettingsPage() {
+  const { user: currentUser } = useAuth();
+  const [healthStatus, setHealthStatus] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [settings, setSettings] = useState({
     companyName: 'LeadAI Pro Enterprise',
-    adminEmail: 'saif@leadai.pro',
+    adminEmail: currentUser?.email || 'admin@leadai.pro',
     openaiApiKey: 'sk-proj-****************',
     openaiModel: 'gpt-4o-mini',
     firecrawlApiKey: '',
@@ -124,6 +127,23 @@ export default function SettingsPage() {
           {/* API Keys Tab */}
           {activeTab === 'apikeys' && (
             <div className="space-y-4 max-w-xl">
+              {healthStatus && (
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2 mb-4">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                    Server Integration Status
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    {Object.entries(healthStatus).map(([name, isOk]) => (
+                      <div key={name} className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                        <span className="capitalize text-slate-700 dark:text-slate-300 font-semibold text-[11px]">{name.replace('_', ' ')}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold ${isOk ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                          {isOk ? 'Connected' : 'Not configured'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   label="OpenAI API Key"

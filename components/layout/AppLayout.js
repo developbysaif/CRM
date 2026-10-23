@@ -1,9 +1,27 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
+const ROUTE_TITLES = {
+  '/dashboard': 'Dashboard',
+  '/leads': 'Leads',
+  '/contacts': 'Contacts',
+  '/companies': 'Companies',
+  '/pipeline': 'Pipeline',
+  '/approvals': 'Approval Center',
+  '/tasks': 'Tasks',
+  '/calendar': 'Calendar',
+  '/chat': 'Messages & AI',
+  '/automation': 'Automation & Crons',
+  '/reports': 'Reports & Analytics',
+  '/team': 'Team',
+  '/settings': 'Settings',
+};
+
 export default function AppLayout({ children, title, subtitle }) {
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -13,6 +31,23 @@ export default function AppLayout({ children, title, subtitle }) {
       setIsCollapsed(saved === 'true');
     }
   }, []);
+
+  // Sync document title per route
+  useEffect(() => {
+    let activeTitle = title;
+    if (!activeTitle) {
+      if (pathname) {
+        if (pathname.startsWith('/leads/')) {
+          activeTitle = 'Lead Details';
+        } else {
+          activeTitle = ROUTE_TITLES[pathname] || 'Enterprise CRM';
+        }
+      }
+    }
+    if (activeTitle) {
+      document.title = `${activeTitle} · LeadAI Pro`;
+    }
+  }, [title, pathname]);
 
   const toggleCollapse = () => {
     const next = !isCollapsed;

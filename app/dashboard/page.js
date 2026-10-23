@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { formatCurrency } from '@/lib/constants';
 import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
 import { 
@@ -17,6 +19,7 @@ import {
 } from 'recharts';
 
 export default function DashboardPage() {
+  const { user: currentUser } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('30d');
@@ -38,7 +41,7 @@ export default function DashboardPage() {
 
   async function fetchStats() {
     try {
-      const res = await fetch('/api/dashboard/stats');
+      const res = await fetch(`/api/dashboard/stats?period=${dateRange}`);
       if (res.ok) {
         const data = await res.json();
         setStats(data.data);
@@ -112,7 +115,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Welcome back, Saif. Track revenue velocity, autonomous outreach, and team pipelines.
+            Welcome back, {currentUser?.name?.split(' ')[0] || 'there'}. Track revenue velocity, autonomous outreach, and team pipelines.
           </p>
         </div>
 
@@ -165,64 +168,64 @@ export default function DashboardPage() {
               icon={Users}
               label="Total Leads"
               value={s.totalLeads || 0}
-              delta="+14.2%"
-              trend="up"
-              comparison="vs last period"
+              delta={s.deltas?.totalLeads || "—"}
+              trend={s.deltas?.totalLeads?.startsWith('+') ? "up" : "neutral"}
+              comparison={`vs previous ${dateRange.toLowerCase()}`}
               color="blue"
             />
             <StatCard
               icon={UserPlus}
               label="New Leads"
               value={s.todayLeads || 0}
-              delta="+8.1%"
-              trend="up"
+              delta="Today"
+              trend="neutral"
               comparison="discovered today"
               color="indigo"
             />
             <StatCard
               icon={ShieldCheck}
               label="Qualified Leads"
-              value={s.qualifiedLeads || Math.round((s.totalLeads || 0) * 0.6)}
-              delta="+18.4%"
-              trend="up"
-              comparison="high intent score"
+              value={s.qualifiedLeads || 0}
+              delta="Scored"
+              trend="neutral"
+              comparison="qualified tier"
               color="purple"
-            />
-            <StatCard
-              icon={GitPullRequest}
-              label="Active Deals"
-              value={s.dealsCount || 4}
-              delta="+5.0%"
-              trend="up"
-              comparison="in active pipeline"
-              color="amber"
             />
             <StatCard
               icon={Trophy}
               label="Won Deals"
-              value={s.wonDealsCount || 2}
-              delta="+20.0%"
-              trend="up"
-              comparison="contracts executed"
+              value={s.closedDeals || 0}
+              delta={s.deltas?.wonDeals || "—"}
+              trend={s.deltas?.wonDeals?.startsWith('+') ? "up" : "neutral"}
+              comparison="closed won opportunities"
               color="emerald"
             />
             <StatCard
               icon={DollarSign}
-              label="Revenue"
-              value={`$${(s.revenue || s.pipelineValue || 0).toLocaleString()}`}
-              delta="+24.8%"
-              trend="up"
-              comparison="closed pipeline value"
+              label="Won Revenue"
+              value={formatCurrency(s.revenue || 0)}
+              delta={s.deltas?.revenue || "—"}
+              trend={s.deltas?.revenue?.startsWith('+') ? "up" : "neutral"}
+              comparison="reconciled closed value"
               color="emerald"
             />
             <StatCard
-              icon={Percent}
-              label="Conversion Rate"
-              value={`${s.conversionRate || 32.5}%`}
-              delta="+4.2%"
-              trend="up"
-              comparison="discovery to won"
+              icon={TrendingUp}
+              label="Average Deal Size"
+              value={formatCurrency(s.averageDealSize || 0)}
+              delta={s.deltas?.averageDealSize || "—"}
+              trend={s.deltas?.averageDealSize?.startsWith('+') ? "up" : "neutral"}
+              comparison="won value ÷ won deals"
               color="blue"
+            />
+            <StatCard
+              icon={Percent}
+              label="Pipeline Win Rate"
+              value={`${s.winRate || 0}%`}
+              delta={s.winRate > 0 ? "Active" : "—"}
+              trend={s.winRate > 0 ? "up" : "neutral"}
+              comparison="won ÷ total closed deals"
+              color="purple"
             />
             <StatCard
               icon={Clock}
@@ -230,7 +233,7 @@ export default function DashboardPage() {
               value={s.followUpsPending || 0}
               delta="Real-time"
               trend="neutral"
-              comparison="awaiting trigger"
+              comparison="scheduled sequences"
               color="red"
             />
           </div>

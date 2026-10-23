@@ -8,13 +8,24 @@ export async function POST(request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { phone, message, leadId } = body;
+    const { phone, message, leadId, isTemplate = false } = body;
 
     if (!phone) {
       return apiError('Recipient phone number is required.', 400);
     }
     if (!message) {
       return apiError('Message text is required.', 400);
+    }
+
+    // Check opt-in requirement for free-text business-initiated WhatsApp outreach
+    if (leadId) {
+      const lead = await Lead.findById(leadId);
+      if (lead && !lead.whatsapp_opt_in && !isTemplate) {
+        return apiError(
+          'WhatsApp Policy: Business-initiated free-text messaging requires prior consent (whatsapp_opt_in = true). Please use an approved WhatsApp HSM template or obtain explicit opt-in.',
+          403
+        );
+      }
     }
 
     // Clean phone number (strip whitespace, dashes, plus sign for wa.me format)

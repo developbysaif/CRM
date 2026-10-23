@@ -1,89 +1,138 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
 import {
-  Button, Card, Input, Select, Modal, Badge, PriorityBadge, Tabs, EmptyState
+  Button, Card, CardContent, Input, Select, Modal, Badge, PriorityBadge, Tabs, EmptyState, LoadingSkeleton
 } from '@/components/ui/index';
 import {
   CheckSquare, Square, Plus, Calendar, Clock, 
   User, Building2, AlertCircle, ArrowUpRight, Check 
 } from 'lucide-react';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState([
-    { id: '1', title: 'Schedule follow-up demo on customized pipeline analytics', lead: 'Grand Bistro London', priority: 'High', due: 'Today', category: 'today', completed: false, assignedTo: 'Saif' },
-    { id: '2', title: 'Send revised Master Services Agreement & payment milestone', lead: 'Apex Luxury Real Estate', priority: 'Urgent', due: 'Today', category: 'today', completed: false, assignedTo: 'Saif' },
-    { id: '3', title: 'Review inbound email reply and confirm meeting availability', lead: 'SkyNet Solutions', priority: 'Medium', due: 'Tomorrow', category: 'upcoming', completed: false, assignedTo: 'Alex' },
-    { id: '4', title: 'Run Apify discovery scan on dental clinics in Manchester', lead: 'DentalCare UK', priority: 'Low', due: 'In 3 days', category: 'upcoming', completed: false, assignedTo: 'Aura AI' },
-    { id: '5', title: 'Verify digital footprint score for uncontacted restaurant batch', lead: 'Crown Tavern London', priority: 'High', due: 'Yesterday', category: 'overdue', completed: false, assignedTo: 'Saif' },
-    { id: '6', title: 'Generated AI personalized cold outreach pitch', lead: 'NovaCare Health', priority: 'Medium', due: '2 days ago', category: 'completed', completed: true, assignedTo: 'Saif' },
-  ]);
-
+  const { user: currentUser } = useAuth();
+  const [tasks, setTasks] = useState([]);
+  const [counts, setCounts] = useState({ all: 0, today: 0, upcoming: 0, overdue: 0, completed: 0 });
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [leadsList, setLeadsList] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
-    lead: '',
+    leadId: '',
     priority: 'High',
-    due: 'Today',
-    category: 'today',
+    dueDate: new Date().toISOString().split('T')[0],
   });
 
-  const toggleTask = (id) => {
-    setTasks(prev => prev.map(t => {
-      if (t.id === id) {
-        const next = !t.completed;
-        return { ...t, completed: next, category: next ? 'completed' : 'today' };
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/tasks');
+      if (res.ok) {
+        const data = await res.json();
+        setTasks(data.data?.tasks || []);
+        setCounts(data.data?.counts || { all: 0, today: 0, upcoming: 0, overdue: 0, completed: 0 });
       }
-      return t;
-    }));
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  // Load leads for selector
+  useEffect(() => {
+    async function loadLeads() {
+      try {
+        const res = await fetch('/api/leads?limit=50');
+        if (res.ok) {
+          const data = await res.json();
+          setLeadsList(data.data?.leads || []);
+        }
+      } catch {}
+    }
+    loadLeads();
+  }, []);
+
+  const toggleTask = async (id, currentCompleted) => {
+    const nextCompleted = !currentCompleted;
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, completed: nextCompleted } : t)));
+
+    try {
+      await fetch('/api/tasks', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, completed: nextCompleted }),
+      });
+      fetchTasks();
+    } catch (err) {
+      console.error('Failed to update task:', err);
+      fetchTasks();
+    }
   };
 
-  const handleCreateTask = (e) => {
+  const handleCreateTask = async (e) => {
     e.preventDefault();
     if (!newTask.title) return;
-    setTasks(prev => [
-      {
-        id: String(Date.now()),
-        title: newTask.title,
-        lead: newTask.lead || 'General Account',
-        priority: newTask.priority,
-        due: newTask.due,
-        category: newTask.category,
-        completed: false,
-        assignedTo: 'Saif',
-      },
-      ...prev
-    ]);
-    setIsAddModalOpen(false);
-    setNewTask({ title: '', lead: '', priority: 'High', due: 'Today', category: 'today' });
+    setSubmitting(true);
+
+    try {
+      const selectedLead = leadsList.find(l => l._id === newTask.leadId);
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTask.title,
+          leadId: newTask.leadId || null,
+          leadName: selectedLead?.companyName || selectedLead?.name || '',
+          priority: newTask.priority.toLowerCase(),
+          dueDate: newTask.dueDate,
+        }),
+      });
+
+      if (res.ok) {
+        setIsAddModalOpen(false);
+        setNewTask({
+          title: '',
+          leadId: '',
+          priority: 'High',
+          dueDate: new Date().toISOString().split('T')[0],
+        });
+        fetchTasks();
+      }
+    } catch (err) {
+      alert('Failed to create task');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const tabs = [
-    { id: 'all', label: 'All Tasks', badge: tasks.length },
-    { id: 'today', label: 'Due Today', badge: tasks.filter(t => t.category === 'today').length },
-    { id: 'upcoming', label: 'Upcoming', badge: tasks.filter(t => t.category === 'upcoming').length },
-    { id: 'overdue', label: 'Overdue', badge: tasks.filter(t => t.category === 'overdue').length },
-    { id: 'completed', label: 'Completed', badge: tasks.filter(t => t.completed).length },
-  ];
-
-  const filteredTasks = tasks.filter(t => {
+  const filteredTasks = tasks.filter((t) => {
     if (activeTab === 'all') return true;
+    if (activeTab === 'today') return !t.completed && t.category === 'today';
+    if (activeTab === 'upcoming') return !t.completed && t.category === 'upcoming';
+    if (activeTab === 'overdue') return !t.completed && t.category === 'overdue';
     if (activeTab === 'completed') return t.completed;
-    return t.category === activeTab && !t.completed;
+    return true;
   });
 
   return (
-    <AppLayout>
+    <AppLayout title="Tasks & Follow-ups">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-            Task Management
+            Follow-up & Execution Tasks
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Organize sales action items, lead touchpoints, and scheduled cadence milestones.
+            Dynamic pipeline task tracking linked to verified lead accounts and reps.
           </p>
         </div>
 
@@ -97,107 +146,181 @@ export default function TasksPage() {
         </Button>
       </div>
 
-      {/* Task Tabs */}
-      <Card hover={false} className="p-0 overflow-hidden mb-6">
-        <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} className="px-5 pt-3" />
+      {/* Tabs Filter Bar */}
+      <div className="flex items-center gap-2 mb-6 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto">
+        {[
+          { id: 'all', label: `All Tasks (${counts.all})` },
+          { id: 'today', label: `Due Today (${counts.today})` },
+          { id: 'upcoming', label: `Upcoming (${counts.upcoming})` },
+          { id: 'overdue', label: `Overdue (${counts.overdue})` },
+          { id: 'completed', label: `Completed (${counts.completed})` },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors shrink-0 cursor-pointer ${
+              activeTab === tab.id
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <div className="p-5 divide-y divide-slate-100 dark:divide-slate-800">
-          {filteredTasks.length === 0 ? (
-            <div className="py-12 text-center">
-              <EmptyState title="No tasks in this view" description="You are all caught up!" />
+      {/* Tasks List */}
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-6">
+              <LoadingSkeleton count={4} />
+            </div>
+          ) : filteredTasks.length === 0 ? (
+            <div className="py-12">
+              <EmptyState
+                title="No Tasks Found"
+                description={
+                  activeTab === 'all'
+                    ? "You don't have any follow-up tasks scheduled yet."
+                    : `No tasks matching the "${activeTab}" filter.`
+                }
+                actionLabel="Create First Task"
+                onAction={() => setIsAddModalOpen(true)}
+              />
             </div>
           ) : (
-            filteredTasks.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => toggleTask(t.id)}
-                className="py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer px-2 rounded-xl"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); toggleTask(t.id); }}
-                    className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                      t.completed
-                        ? 'bg-emerald-600 border-emerald-600 text-white'
-                        : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-500'
-                    }`}
-                  >
-                    {t.completed && <Check className="w-3.5 h-3.5" />}
-                  </button>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {filteredTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className={`p-4 flex items-center justify-between gap-4 transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40 ${
+                    task.completed ? 'opacity-60 bg-slate-50/30 dark:bg-slate-900/30' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleTask(task.id, task.completed)}
+                      className="mt-0.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                      aria-label={task.completed ? 'Mark pending' : 'Mark completed'}
+                    >
+                      {task.completed ? (
+                        <CheckSquare className="w-5 h-5 text-emerald-600 fill-emerald-100 dark:fill-emerald-950/60" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
 
-                  <div className="min-w-0">
-                    <span className={`text-xs font-bold block truncate ${
-                      t.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'
-                    }`}>
-                      {t.title}
-                    </span>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                      <span className="flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-400">
-                        <Building2 className="w-3 h-3" /> {t.lead}
-                      </span>
-                      <span>• Assigned to {t.assignedTo}</span>
+                    <div className="min-w-0">
+                      <div className={`text-xs font-bold text-slate-900 dark:text-white ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>
+                        {task.title}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
+                          <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                          {task.leadId ? (
+                            <Link href={`/leads/${task.leadId}`} className="hover:text-blue-600 no-underline">
+                              {task.lead}
+                            </Link>
+                          ) : (
+                            <span>{task.lead}</span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <User className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{task.assignedTo || currentUser?.name || 'Admin'}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-xs font-semibold flex items-center gap-1 ${
-                    t.category === 'overdue' ? 'text-red-600 font-bold' : 'text-slate-500'
-                  }`}>
-                    <Calendar className="w-3 h-3" /> {t.due}
-                  </span>
-                  <PriorityBadge priority={t.priority} />
+                  <div className="flex items-center gap-3 shrink-0">
+                    <PriorityBadge priority={task.priority} />
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                        task.category === 'overdue' && !task.completed
+                          ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300'
+                          : task.category === 'today' && !task.completed
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
+                          : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      }`}
+                    >
+                      {task.dueLabel}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
-        </div>
+        </CardContent>
       </Card>
 
       {/* Add Task Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Create New Action Task"
+        title="Create Follow-up Task"
       >
         <form onSubmit={handleCreateTask} className="space-y-4">
           <Input
             label="Task Description"
             required
+            placeholder="e.g. Schedule commercial follow-up call"
             value={newTask.title}
             onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            placeholder="e.g. Call CEO to finalize pilot contract terms"
           />
-          <Input
-            label="Related Prospect / Account"
-            value={newTask.lead}
-            onChange={(e) => setNewTask({ ...newTask, lead: e.target.value })}
-            placeholder="e.g. Apex Luxury Real Estate"
+
+          <Select
+            label="Linked Account / Lead"
+            value={newTask.leadId}
+            onChange={(e) => setNewTask({ ...newTask, leadId: e.target.value })}
+            options={[
+              { value: '', label: 'General Task (No Lead Linked)' },
+              ...leadsList.map((l) => ({
+                value: l._id,
+                label: `${l.companyName || l.company || l.name} (${l.status || 'New'})`,
+              })),
+            ]}
           />
+
           <div className="grid grid-cols-2 gap-3">
             <Select
-              label="Priority Level"
-              options={['Urgent', 'High', 'Medium', 'Low']}
+              label="Priority"
               value={newTask.priority}
               onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-            />
-            <Select
-              label="Schedule Bucket"
               options={[
-                { value: 'today', label: 'Due Today' },
-                { value: 'upcoming', label: 'Upcoming' },
-                { value: 'overdue', label: 'Overdue' },
+                { value: 'Low', label: 'Low Priority' },
+                { value: 'Medium', label: 'Medium Priority' },
+                { value: 'High', label: 'High Priority' },
               ]}
-              value={newTask.category}
-              onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
+            />
+
+            <Input
+              label="Due Date"
+              type="date"
+              required
+              value={newTask.dueDate}
+              onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
             />
           </div>
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" type="button" onClick={() => setIsAddModalOpen(false)}>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+            >
               Cancel
             </Button>
-            <Button variant="primary" type="submit">
+            <Button
+              variant="primary"
+              type="submit"
+              loading={submitting}
+            >
               Save Task
             </Button>
           </div>

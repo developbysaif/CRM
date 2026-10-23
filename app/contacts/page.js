@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/components/providers/AuthProvider';
 import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
 import {
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 
 export default function ContactsPage() {
+  const { user: currentUser } = useAuth();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -185,7 +187,7 @@ export default function ContactsPage() {
                     <td className="p-4">
                       <Badge variant="primary">{c.status || 'Active'}</Badge>
                     </td>
-                    <td className="p-4 text-slate-700 dark:text-slate-300">Saif (Admin)</td>
+                    <td className="p-4 text-slate-700 dark:text-slate-300">{c.assignedToName || c.assignedTo || currentUser?.name || "Admin User"}</td>
                     <td className="p-4 text-right">
                       <button
                         type="button"

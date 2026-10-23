@@ -6,9 +6,11 @@ import {
   ExternalLink, User, ShieldCheck, Settings, LogOut 
 } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
-import { Modal } from '../ui/index';
+import { Modal, getInitials } from '../ui/index';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function Topbar({ onToggleMobile }) {
+  const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -17,6 +19,10 @@ export default function Topbar({ onToggleMobile }) {
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const notifRef = useRef(null);
   const userRef = useRef(null);
+
+  const userName = user?.name || 'Admin User';
+  const userEmail = user?.email || 'admin@leadai.pro';
+  const userInitials = getInitials(userName);
 
   useEffect(() => {
     async function loadNotifications() {
@@ -175,15 +181,20 @@ export default function Topbar({ onToggleMobile }) {
               className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-                AD
+                {userInitials}
               </div>
             </button>
 
             {userMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 p-1.5 animate-in fade-in">
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">Admin User</div>
-                  <div className="text-[11px] text-slate-400">admin@leadai.pro</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">{userName}</div>
+                  <div className="text-[11px] text-slate-400">{userEmail}</div>
+                  {user?.role && (
+                    <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                      {user.role}
+                    </span>
+                  )}
                 </div>
 
                 <Link
@@ -208,7 +219,10 @@ export default function Topbar({ onToggleMobile }) {
 
                 <button
                   type="button"
-                  onClick={() => alert('Signed out successfully.')}
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout();
+                  }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />

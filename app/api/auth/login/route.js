@@ -1,11 +1,16 @@
+import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
-import { signToken } from '@/lib/auth';
+import { signToken, getCookieOptions } from '@/lib/auth';
 import { apiSuccess, apiError } from '@/lib/api';
+import { ensureAdminSeeded } from '@/lib/services/auth/seed-admin';
 
 export async function POST(request) {
   try {
     await connectDB();
+    // Auto-seed admin if database is fresh
+    await ensureAdminSeeded();
+
     const body = await request.json();
     const { email, password } = body;
 
@@ -13,22 +18,52 @@ export async function POST(request) {
       return apiError('Email and password are required', 400);
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail }).select('+password');
     if (!user || !(await user.comparePassword(password))) {
-      return apiError('Invalid credentials', 401);
+      return apiError('Invalid email or password', 401);
     }
 
     if (!user.isActive) {
-      return apiError('Account is deactivated', 403);
+      return apiError('Account is deactivated. Contact your administrator.', 403);
     }
 
     await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
 
-    const token = signToken({ id: user._id, email: user.email, role: user.role });
+    const tokenPayload = {
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
 
-    return apiSuccess({ token, user: user.toJSON() }, 'Login successful');
+    const token = signToken(tokenPayload);
+    const userJson = user.toJSON();
+
+    const response = NextResponse.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        token,
+        user: userJson,
+      },
+    });
+
+    // Set HTTP-only session cookie
+    const cookieOpts = getCookieOptions();
+    response.cookies.set({
+      name: cookieOpts.name,
+      value: token,
+      httpOnly: cookieOpts.httpOnly,
+      secure: cookieOpts.secure,
+      sameSite: cookieOpts.sameSite,
+      path: cookieOpts.path,
+      maxAge: cookieOpts.maxAge,
+    });
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
-    return apiError('Login failed', 500);
+    return apiError('Login failed: ' + (error.message || 'Internal server error'), 500);
   }
 }

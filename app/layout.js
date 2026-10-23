@@ -1,8 +1,16 @@
 import './globals.css';
+import { AuthProvider } from '@/components/providers/AuthProvider';
 
 export const metadata = {
-  title: 'LeadAI Pro — Enterprise SaaS CRM Platform',
+  title: {
+    default: 'LeadAI Pro — Enterprise SaaS CRM',
+    template: '%s · LeadAI Pro',
+  },
   description: 'Enterprise AI-powered lead generation, CRM, outreach, and contract automation platform',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -34,7 +42,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body suppressHydrationWarning>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

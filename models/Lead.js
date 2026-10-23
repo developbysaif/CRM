@@ -119,6 +119,7 @@ const LeadSchema = new mongoose.Schema(
     doNotContact: { type: Boolean, default: false },
     unsubscribed: { type: Boolean, default: false },
     unsubscribeToken: { type: String, default: null },
+    whatsapp_opt_in: { type: Boolean, default: false },
     lastContactedAt: { type: Date, default: null },
     nextFollowUpDate: { type: Date, default: null },
     followUpCount: { type: Number, default: 0 },

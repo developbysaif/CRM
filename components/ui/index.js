@@ -389,7 +389,7 @@ export function Pagination({ page = 1, totalPages = 1, totalItems = 0, onPageCha
         <Button
           variant="outline"
           size="sm"
-          disabled={page <= 1}
+          disabled={page <= 1 || totalPages <= 1}
           onClick={() => onPageChange(page - 1)}
           icon={ChevronLeft}
         >
@@ -398,7 +398,7 @@ export function Pagination({ page = 1, totalPages = 1, totalItems = 0, onPageCha
         <Button
           variant="outline"
           size="sm"
-          disabled={page >= totalPages}
+          disabled={page >= totalPages || totalPages <= 1}
           onClick={() => onPageChange(page + 1)}
           iconRight={ChevronRight}
         >
@@ -410,7 +410,7 @@ export function Pagination({ page = 1, totalPages = 1, totalItems = 0, onPageCha
 }
 
 /* ==================== EMPTY STATE ==================== */
-export function EmptyState({ icon: Icon = AlertCircle, title = 'No data found', description = '', action }) {
+export function EmptyState({ icon: Icon = AlertCircle, title = 'No data found', description = '', action, actionLabel, onAction }) {
   return (
     <div className="p-12 text-center flex flex-col items-center justify-center max-w-sm mx-auto">
       <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
@@ -419,6 +419,7 @@ export function EmptyState({ icon: Icon = AlertCircle, title = 'No data found', 
       <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{title}</h4>
       {description && <p className="text-xs text-slate-500 mt-1 mb-4">{description}</p>}
       {action && <div>{action}</div>}
+      {actionLabel && onAction && <Button size='sm' variant='primary' onClick={onAction}>{actionLabel}</Button>}
     </div>
   );
 }
@@ -452,8 +453,17 @@ export function LoadingSkeleton({ count = 4, type = 'card' }) {
 }
 
 /* ==================== AVATAR ==================== */
+export function getInitials(name = 'User') {
+  if (!name || typeof name !== 'string') return 'U';
+  const clean = name.replace(/\(.*?\)/g, '').replace(/[^a-zA-Z0-9\s]/g, '').trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 export function Avatar({ name = 'User', size = 'md', className = '' }) {
-  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+  const initials = getInitials(name);
   const sizes = {
     sm: "w-7 h-7 text-[10px]",
     md: "w-9 h-9 text-xs",

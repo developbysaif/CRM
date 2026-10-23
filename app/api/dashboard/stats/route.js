@@ -2,94 +2,71 @@ import connectDB from '@/lib/db';
 import Lead from '@/models/Lead';
 import Proposal from '@/models/Proposal';
 import Contract from '@/models/Contract';
-import Invoice from '@/models/Invoice';
-import Meeting from '@/models/Meeting';
 import ActivityLog from '@/models/ActivityLog';
 import EmailMessage from '@/models/EmailMessage';
 import FollowUp from '@/models/FollowUp';
 import ApprovalQueue from '@/models/ApprovalQueue';
 import { apiSuccess, apiError } from '@/lib/api';
+import { getUnifiedMetrics, getDateRangeForPeriod } from '@/lib/metrics';
 
 export async function GET(request) {
   try {
     await connectDB();
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || '30d';
+
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const { currentStart, currentEnd } = getDateRangeForPeriod(period, now);
+    const isAllTime = period === 'all' || period === 'all_time';
+
+    const periodFilter = isAllTime ? {} : { createdAt: { $gte: currentStart, $lte: currentEnd } };
+
+    // Fetch unified metrics for reconciliation
+    const unified = await getUnifiedMetrics(period);
 
     const [
       totalLeads,
       todayLeads,
       newLeadsCount,
       qualifiedLeadsCount,
-      hotLeads,
-      warmLeads,
-      coldLeads,
-      interestedLeadsCount,
-      closedDealsCount,
+      activeWonLeads,
       emailsSentCount,
       emailsRepliedCount,
       followUpsPendingCount,
       pendingApprovalsCount,
-      proposalsList,
-      contractsList,
-      allInvoices,
       leadsByStatusAgg,
       leadsBySourceAgg,
-      leadsByIndustryAgg,
       recentLeads,
       recentActivities,
-      upcomingCalls,
     ] = await Promise.all([
-      Lead.countDocuments(),
-      Lead.countDocuments({ createdAt: { $gte: todayStart } }),
-      Lead.countDocuments({ pipelineStatus: 'New Lead' }),
-      Lead.countDocuments({ pipelineStatus: 'Qualified' }),
-      Lead.countDocuments({ leadStatus: 'Hot' }),
-      Lead.countDocuments({ leadStatus: 'Warm' }),
-      Lead.countDocuments({ leadStatus: 'Cold' }),
-      Lead.countDocuments({ pipelineStatus: 'Interested' }),
-      Lead.countDocuments({
-        pipelineStatus: { $in: ['Closed Won', 'Contract Signed', 'Paid', 'Completed'] },
-      }),
+      Lead.countDocuments(periodFilter),
+      Lead.countDocuments({ createdAt: { $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } }),
+      Lead.countDocuments({ ...periodFilter, status: 'New Lead' }),
+      Lead.countDocuments({ ...periodFilter, status: 'Qualified' }),
+      Lead.find({ ...periodFilter, status: 'Closed Won' }).select('dealValue').lean(),
       EmailMessage.countDocuments({ direction: 'outbound', status: 'sent' }),
       EmailMessage.countDocuments({ direction: 'inbound' }),
       FollowUp.countDocuments({ status: 'scheduled' }),
       ApprovalQueue.countDocuments({ status: 'approval_required' }),
-      Proposal.find().select('pricing status proposalNumber clientName createdAt').lean(),
-      Contract.find().select('totalAmount status contractNumber projectName createdAt').lean(),
-      Invoice.find().select('total amountPaid status').lean(),
-      Lead.aggregate([{ $group: { _id: '$pipelineStatus', count: { $sum: 1 } } }]),
-      Lead.aggregate([{ $group: { _id: '$source', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
       Lead.aggregate([
-        { $match: { businessType: { $ne: '' } } },
-        { $group: { _id: '$businessType', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 8 },
+        { $match: periodFilter },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
-      Lead.find().sort({ createdAt: -1 }).limit(6).lean(),
+      Lead.aggregate([
+        { $match: periodFilter },
+        { $group: { _id: { $ifNull: ['$source', 'manual'] }, count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
+      Lead.find(periodFilter).sort({ createdAt: -1 }).limit(6).lean(),
       ActivityLog.find().sort({ createdAt: -1 }).limit(8).populate('leadId', 'name company companyName').lean(),
-      Meeting.find({ startTime: { $gte: now } })
-        .sort({ startTime: 1 })
-        .limit(4)
-        .populate('leadId', 'name company email')
-        .lean(),
     ]);
 
-    // Financial Metrics
-    const totalRevenuePaid = allInvoices.reduce((sum, i) => sum + (i.amountPaid || 0), 0);
-    const contractWonTotal = contractsList
-      .filter((c) => ['Signed', 'Under Review'].includes(c.status))
-      .reduce((sum, c) => sum + (c.totalAmount || 0), 0);
-    const activeRevenue = Math.max(totalRevenuePaid, contractWonTotal);
-
-    const pipelineValue = proposalsList
-      .filter((p) => !['Rejected'].includes(p.status))
-      .reduce((sum, p) => sum + (p.pricing?.total || 0), 0);
-
-    // Reply Rate
+    // Reconciled Financials from unified metrics
+    const wonRevenue = unified.kpi.totalRevenue.value;
+    const closedWonCount = activeWonLeads.length;
     const replyRate = emailsSentCount > 0 ? Math.round((emailsRepliedCount / emailsSentCount) * 100) : 0;
 
-    // Conversion Funnel Data
+    // Conversion Funnel
     const statusMap = {};
     leadsByStatusAgg.forEach((item) => {
       statusMap[item._id] = item.count;
@@ -97,15 +74,14 @@ export async function GET(request) {
 
     const conversionFunnel = [
       { stage: 'New Leads', count: totalLeads },
-      { stage: 'Qualified', count: (statusMap['Qualified'] || 0) + (statusMap['Contacted'] || 0) + (statusMap['Replied'] || 0) + (statusMap['Interested'] || 0) + (statusMap['Proposal Sent'] || 0) + closedDealsCount },
-      { stage: 'Outreach Sent', count: (statusMap['Contacted'] || 0) + (statusMap['Replied'] || 0) + (statusMap['Interested'] || 0) + (statusMap['Proposal Sent'] || 0) + closedDealsCount },
-      { stage: 'Replied', count: (statusMap['Replied'] || 0) + (statusMap['Interested'] || 0) + (statusMap['Proposal Sent'] || 0) + closedDealsCount },
-      { stage: 'Interested', count: (statusMap['Interested'] || 0) + (statusMap['Proposal Sent'] || 0) + closedDealsCount },
-      { stage: 'Proposal Sent', count: (statusMap['Proposal Sent'] || 0) + closedDealsCount },
-      { stage: 'Closed Won', count: closedDealsCount },
+      { stage: 'Contacted', count: (statusMap['Contacted'] || 0) + (statusMap['Qualified'] || 0) + (statusMap['Proposal Sent'] || 0) + (statusMap['Negotiation'] || 0) + closedWonCount },
+      { stage: 'Qualified', count: (statusMap['Qualified'] || 0) + (statusMap['Proposal Sent'] || 0) + (statusMap['Negotiation'] || 0) + closedWonCount },
+      { stage: 'Proposal Sent', count: (statusMap['Proposal Sent'] || 0) + (statusMap['Negotiation'] || 0) + closedWonCount },
+      { stage: 'Negotiation', count: (statusMap['Negotiation'] || 0) + closedWonCount },
+      { stage: 'Closed Won', count: closedWonCount },
     ];
 
-    // Real Monthly Trend (Last 6 Months)
+    // Real Monthly Trend (Last 6 Months, zero synthetic inflation)
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthlyTrend = [];
     for (let i = 5; i >= 0; i--) {
@@ -114,15 +90,13 @@ export async function GET(request) {
       const mName = monthNames[d.getMonth()];
 
       const mLeads = await Lead.countDocuments({ createdAt: { $gte: d, $lte: mEnd } });
-      const mContracts = contractsList.filter(
-        (c) => new Date(c.createdAt) >= d && new Date(c.createdAt) <= mEnd
-      );
-      const mRev = mContracts.reduce((sum, c) => sum + (c.totalAmount || 0), 0);
+      const mWon = await Lead.find({ status: 'Closed Won', createdAt: { $gte: d, $lte: mEnd } }).select('dealValue').lean();
+      const mRev = mWon.reduce((sum, l) => sum + (Number(l.dealValue) || 0), 0);
 
       monthlyTrend.push({
         name: mName,
         leads: mLeads,
-        revenue: mRev || mLeads * 1200,
+        revenue: mRev,
       });
     }
 
@@ -132,33 +106,27 @@ export async function GET(request) {
         todayLeads,
         newLeads: newLeadsCount,
         qualifiedLeads: qualifiedLeadsCount,
-        hotLeads,
-        warmLeads,
-        coldLeads,
-        interestedLeads: interestedLeadsCount,
-        closedDeals: closedDealsCount,
+        closedDeals: closedWonCount,
         emailsSent: emailsSentCount,
         replies: emailsRepliedCount,
         replyRate,
         followUpsPending: followUpsPendingCount,
         pendingApprovals: pendingApprovalsCount,
-        proposalsCount: proposalsList.length,
-        contractsCount: contractsList.length,
-        pipelineValue,
-        revenue: activeRevenue,
+        revenue: wonRevenue,
+        averageDealSize: unified.kpi.averageDealSize.value,
+        winRate: unified.kpi.winRate.value,
+        deltas: {
+          revenue: unified.kpi.totalRevenue.delta,
+          averageDealSize: unified.kpi.averageDealSize.delta,
+          totalLeads: unified.kpi.totalLeads.delta,
+          wonDeals: unified.kpi.wonDeals.delta,
+        },
       },
       conversionFunnel,
       monthlyTrend,
-      leadsByQuality: [
-        { name: 'Hot (80-100)', count: hotLeads, fill: '#ef4444' },
-        { name: 'Warm (60-79)', count: warmLeads, fill: '#f59e0b' },
-        { name: 'Cold (0-59)', count: coldLeads, fill: '#3b82f6' },
-      ],
-      leadsBySource: leadsBySourceAgg.map((s) => ({ name: s._id || 'Direct', count: s.count })),
-      leadsByIndustry: leadsByIndustryAgg.map((i) => ({ _id: i._id || 'Other', count: i.count })),
+      leadsBySource: leadsBySourceAgg.map((s) => ({ name: s._id || 'manual', count: s.count })),
       recentLeads,
       recentActivities,
-      upcomingCalls,
     });
   } catch (error) {
     console.error('Dashboard stats API error:', error);

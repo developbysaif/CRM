@@ -31,6 +31,8 @@ const ApprovalQueueSchema = new mongoose.Schema(
     scheduledFor: { type: Date, default: null },
     approvedAt: { type: Date, default: null },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    approvedByName: { type: String, default: '' },
+    contentHash: { type: String, default: '' },
     rejectedAt: { type: Date, default: null },
     rejectionReason: { type: String, default: '' },
     sentAt: { type: Date, default: null },

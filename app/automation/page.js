@@ -75,7 +75,7 @@ export default function AutomationPage() {
       <Card hover={false} className="p-6 mb-8">
         <div className="flex items-center justify-between mb-4">
           <CardTitle>Autonomous Sales Execution Pipeline</CardTitle>
-          <Badge variant="success">Engine Active (0 Synthetic Fallbacks)</Badge>
+          <Badge variant="success">Vercel Cron Configured · Daily 09:00 UTC</Badge>
         </div>
 
         {/* Nodes and Connectors */}

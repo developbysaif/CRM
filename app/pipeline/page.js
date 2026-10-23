@@ -10,15 +10,8 @@ import {
   Search, Plus, Filter, DollarSign, Trophy, 
   GitPullRequest, ArrowUpRight, Building2, User, Calendar
 } from 'lucide-react';
-
-const PIPELINE_COLUMNS = [
-  { id: 'New Lead', label: 'New', color: 'border-blue-500 bg-blue-50/20' },
-  { id: 'Qualified', label: 'Qualified', color: 'border-indigo-500 bg-indigo-50/20' },
-  { id: 'Proposal Sent', label: 'Proposal', color: 'border-amber-500 bg-amber-50/20' },
-  { id: 'Negotiation', label: 'Negotiation', color: 'border-purple-500 bg-purple-50/20' },
-  { id: 'Closed Won', label: 'Won', color: 'border-emerald-500 bg-emerald-50/20' },
-  { id: 'Closed Lost', label: 'Lost', color: 'border-red-500 bg-red-50/20' },
-];
+import { PIPELINE_STAGES, formatCurrency } from '@/lib/constants';
+import { calculatePipelineHealth, calculateWinRate } from '@/lib/metrics-calc';
 
 export default function PipelinePage() {
   const [leads, setLeads] = useState([]);
@@ -26,24 +19,25 @@ export default function PipelinePage() {
   const [search, setSearch] = useState('');
   const [draggedLeadId, setDraggedLeadId] = useState(null);
   const [isAddDealModalOpen, setIsAddDealModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [newDeal, setNewDeal] = useState({
     name: '',
     company: '',
     email: '',
-    budgetRaw: '$10,000',
+    dealValue: 10000,
     status: 'New Lead',
   });
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/leads?limit=100');
+      const res = await fetch('/api/leads?limit=150');
       if (res.ok) {
         const data = await res.json();
         setLeads(data.data?.leads || []);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load deals for pipeline:', err);
     } finally {
       setLoading(false);
     }
@@ -61,66 +55,92 @@ export default function PipelinePage() {
     e.preventDefault();
   };
 
-  const handleDrop = async (columnId) => {
+  const handleDrop = async (newStage) => {
     if (!draggedLeadId) return;
-    const targetId = draggedLeadId;
-    setDraggedLeadId(null);
 
     // Optimistic UI update
-    setLeads(prev => prev.map(l => l._id === targetId ? { ...l, status: columnId } : l));
+    setLeads((prev) =>
+      prev.map((l) => (l._id === draggedLeadId ? { ...l, status: newStage } : l))
+    );
+
+    const leadIdToUpdate = draggedLeadId;
+    setDraggedLeadId(null);
 
     try {
-      await fetch(`/api/leads/${targetId}`, {
+      await fetch(`/api/leads/${leadIdToUpdate}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: columnId }),
+        body: JSON.stringify({ status: newStage }),
       });
+      fetchLeads();
     } catch (err) {
-      console.error('Failed to update stage', err);
+      console.error('Failed to update deal stage:', err);
       fetchLeads();
     }
   };
 
   const handleCreateDeal = async (e) => {
     e.preventDefault();
+    if (!newDeal.name && !newDeal.company) return;
+    setSubmitting(true);
+
     try {
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newDeal),
+        body: JSON.stringify({
+          name: newDeal.name || newDeal.company,
+          companyName: newDeal.company,
+          email: newDeal.email,
+          dealValue: Number(newDeal.dealValue) || 10000,
+          status: newDeal.status,
+          source: 'manual',
+        }),
       });
+
       if (res.ok) {
         setIsAddDealModalOpen(false);
-        setNewDeal({ name: '', company: '', email: '', budgetRaw: '$10,000', status: 'New Lead' });
+        setNewDeal({
+          name: '',
+          company: '',
+          email: '',
+          dealValue: 10000,
+          status: 'New Lead',
+        });
         fetchLeads();
       }
     } catch (err) {
-      console.error(err);
+      alert('Failed to create deal');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const filteredLeads = leads.filter(l => {
+  const filteredLeads = leads.filter((l) => {
     const q = search.toLowerCase();
     const name = (l.name || '').toLowerCase();
     const company = (l.companyName || l.company || '').toLowerCase();
     return name.includes(q) || company.includes(q);
   });
 
-  // Calculate metrics
+  // Calculate live reconciled metrics
   const totalDeals = leads.length;
-  const wonDeals = leads.filter(l => l.status === 'Closed Won').length;
-  const winRate = totalDeals > 0 ? Math.round((wonDeals / totalDeals) * 100) : 0;
+  const wonDeals = leads.filter((l) => l.status === 'Closed Won').length;
+  const lostDeals = leads.filter((l) => l.status === 'Closed Lost').length;
+  const activeDeals = leads.filter((l) => !['Closed Won', 'Closed Lost'].includes(l.status)).length;
+  const winRate = calculateWinRate(wonDeals, lostDeals);
+  const pipelineHealth = calculatePipelineHealth({ totalDeals, winRate, activeDeals });
 
   return (
-    <AppLayout>
+    <AppLayout title="Deals & Pipeline">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-            Deals & Pipeline Kanban
+            Deals &amp; Pipeline Kanban
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Drag-and-drop active opportunities between stages to update deal velocity.
+            Drag-and-drop active opportunities across 7 synchronized pipeline stages.
           </p>
         </div>
 
@@ -132,7 +152,7 @@ export default function PipelinePage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search deals..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -151,26 +171,36 @@ export default function PipelinePage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Deals</span>
-          <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">{totalDeals}</span>
+          <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">
+            {loading ? '...' : totalDeals}
+          </span>
         </div>
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Closed Won</span>
-          <span className="text-xl font-black text-emerald-600 mt-1 block">{wonDeals} deals</span>
+          <span className="text-xl font-black text-emerald-600 mt-1 block">
+            {loading ? '...' : `${wonDeals} deals`}
+          </span>
         </div>
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Pipeline Win Rate</span>
-          <span className="text-xl font-black text-blue-600 mt-1 block">{winRate}%</span>
+          <span className="text-xl font-black text-blue-600 mt-1 block">
+            {loading ? '...' : `${winRate}%`}
+          </span>
         </div>
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Pipeline Health</span>
-          <span className="text-xl font-black text-indigo-600 mt-1 block">Optimal</span>
+          <span className={`text-base font-black mt-1.5 inline-block px-2 py-0.5 rounded-lg ${pipelineHealth.color}`}>
+            {pipelineHealth.status}
+          </span>
         </div>
       </div>
 
-      {/* Kanban Board Columns */}
+      {/* Kanban Board Columns: All 7 Stages */}
       <div className="flex gap-4 overflow-x-auto pb-6 min-h-[600px]">
-        {PIPELINE_COLUMNS.map((col) => {
-          const colLeads = filteredLeads.filter(l => (l.status || 'New Lead') === col.id);
+        {PIPELINE_STAGES.map((col) => {
+          const colLeads = filteredLeads.filter((l) => (l.status || 'New Lead') === col.id);
+          const colValue = colLeads.reduce((sum, l) => sum + (Number(l.dealValue) || 0), 0);
+
           return (
             <div
               key={col.id}
@@ -186,10 +216,15 @@ export default function PipelinePage() {
                     {colLeads.length}
                   </span>
                 </div>
+                {colValue > 0 && (
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                    {formatCurrency(colValue)}
+                  </span>
+                )}
               </div>
 
               {/* Cards List */}
-              <div className="flex-1 space-y-3 overflow-y-auto min-h-[150px]">
+              <div className="flex-1 space-y-3 overflow-y-auto min-h-[180px]">
                 {loading ? (
                   <LoadingSkeleton count={2} />
                 ) : colLeads.length === 0 ? (
@@ -202,7 +237,7 @@ export default function PipelinePage() {
                       key={deal._id}
                       draggable
                       onDragStart={() => handleDragStart(deal._id)}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group"
+                      className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing group"
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <Link
@@ -211,19 +246,21 @@ export default function PipelinePage() {
                         >
                           {deal.companyName || deal.company || deal.name}
                         </Link>
-                        <LeadScoreBadge score={deal.leadScore || 75} />
+                        <LeadScoreBadge score={deal.leadScore || 70} />
                       </div>
 
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
                         <User className="w-3 h-3 text-slate-400" />
-                        <span className="truncate">{deal.name || 'Alex Morgan'}</span>
+                        <span className="truncate">{deal.contactPerson || deal.name}</span>
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                        <span className="font-extrabold text-emerald-600">
-                          {deal.budgetRaw || '$8,500'}
+                        <span className="font-black text-slate-900 dark:text-white">
+                          {formatCurrency(deal.dealValue || 10000)}
                         </span>
-                        <PriorityBadge priority={deal.leadScore >= 80 ? 'Urgent' : 'Medium'} />
+                        <span className="text-[10px] text-slate-400">
+                          {deal.updatedAt ? new Date(deal.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'Recent'}
+                        </span>
                       </div>
                     </div>
                   ))
@@ -234,55 +271,58 @@ export default function PipelinePage() {
         })}
       </div>
 
-      {/* Add Deal Modal */}
+      {/* Create Deal Modal */}
       <Modal
         isOpen={isAddDealModalOpen}
         onClose={() => setIsAddDealModalOpen(false)}
-        title="Create New Pipeline Deal"
+        title="Create New Opportunity"
       >
         <form onSubmit={handleCreateDeal} className="space-y-4">
           <Input
             label="Deal / Prospect Name"
             required
-            value={newDeal.name}
-            onChange={(e) => setNewDeal({ ...newDeal, name: e.target.value })}
-            placeholder="e.g. Enterprise Cloud Migration"
+            placeholder="e.g. Apex Health Group"
+            value={newDeal.company}
+            onChange={(e) => setNewDeal({ ...newDeal, company: e.target.value, name: e.target.value })}
           />
           <Input
-            label="Company Name"
-            required
-            value={newDeal.company}
-            onChange={(e) => setNewDeal({ ...newDeal, company: e.target.value })}
-            placeholder="e.g. Zenith Tech Solutions"
+            label="Contact Email"
+            type="email"
+            placeholder="contact@apexhealth.co.uk"
+            value={newDeal.email}
+            onChange={(e) => setNewDeal({ ...newDeal, email: e.target.value })}
           />
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Contact Email"
-              type="email"
+              label="Estimated Value (£)"
+              type="number"
               required
-              value={newDeal.email}
-              onChange={(e) => setNewDeal({ ...newDeal, email: e.target.value })}
-              placeholder="contact@zenith.com"
+              placeholder="15000"
+              value={newDeal.dealValue}
+              onChange={(e) => setNewDeal({ ...newDeal, dealValue: Number(e.target.value) })}
             />
-            <Input
-              label="Estimated Value"
-              value={newDeal.budgetRaw}
-              onChange={(e) => setNewDeal({ ...newDeal, budgetRaw: e.target.value })}
-              placeholder="$15,000"
+            <Select
+              label="Initial Stage"
+              value={newDeal.status}
+              onChange={(e) => setNewDeal({ ...newDeal, status: e.target.value })}
+              options={PIPELINE_STAGES.map((s) => ({ value: s.id, label: s.label }))}
             />
           </div>
-          <Select
-            label="Starting Stage"
-            options={PIPELINE_COLUMNS.map(c => ({ value: c.id, label: c.label }))}
-            value={newDeal.status}
-            onChange={(e) => setNewDeal({ ...newDeal, status: e.target.value })}
-          />
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" type="button" onClick={() => setIsAddDealModalOpen(false)}>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setIsAddDealModalOpen(false)}
+            >
               Cancel
             </Button>
-            <Button variant="primary" type="submit">
-              Save Deal
+            <Button
+              variant="primary"
+              type="submit"
+              loading={submitting}
+            >
+              Create Opportunity
             </Button>
           </div>
         </form>

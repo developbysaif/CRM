@@ -3,49 +3,69 @@ import { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import {
   Button, Card, CardHeader, CardTitle, CardContent, 
-  Badge, StatCard
+  Badge, StatCard, LoadingSkeleton, EmptyState
 } from '@/components/ui/index';
 import {
-  BarChart3, Download, Calendar, TrendingUp, Users, 
+  BarChart3, Download, TrendingUp, Users, 
   DollarSign, PieChart as PieIcon, ArrowUpRight, FileText
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, AreaChart, Area,
   PieChart, Pie, Cell, XAxis, YAxis, Tooltip, Legend
 } from 'recharts';
+import { formatCurrency } from '@/lib/constants';
+
+const CHANNEL_COLORS = {
+  google_places: '#2563eb',
+  apify: '#4f46e5',
+  csv_import: '#10b981',
+  manual: '#f59e0b',
+};
+
+const CHANNEL_LABELS = {
+  google_places: 'Google Places API',
+  apify: 'Apify Maps Mining',
+  csv_import: 'CSV Bulk Import',
+  manual: 'Direct / Manual Entry',
+};
 
 export default function ReportsPage() {
   const [dateFilter, setDateFilter] = useState('Quarter');
-  const [stats, setStats] = useState(null);
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadStats() {
+    async function loadReports() {
+      setLoading(true);
       try {
-        const res = await fetch('/api/dashboard/stats');
+        const res = await fetch(`/api/reports?period=${encodeURIComponent(dateFilter)}`);
         if (res.ok) {
           const data = await res.json();
-          setStats(data.data);
+          setReportData(data.data);
         }
-      } catch {}
+      } catch (err) {
+        console.error('Failed to load reports:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-    loadStats();
-  }, []);
+    loadReports();
+  }, [dateFilter]);
 
-  const performanceData = [
-    { channel: 'Google Places', discovered: 42, qualified: 28, deals: 6, revenue: 38000 },
-    { channel: 'Apify Web Crawler', discovered: 35, qualified: 20, deals: 4, revenue: 26000 },
-    { channel: 'Direct / Manual Entry', discovered: 18, qualified: 15, deals: 5, revenue: 32000 },
-    { channel: 'Hunter Verification', discovered: 24, qualified: 18, deals: 3, revenue: 19000 },
-  ];
+  const kpi = reportData?.kpi || {};
+  const channels = reportData?.channels || [];
 
-  const sourceDonut = [
-    { name: 'Google Places API', value: 45, fill: '#2563eb' },
-    { name: 'Apify Mining', value: 30, fill: '#4f46e5' },
-    { name: 'Manual Additions', value: 25, fill: '#10b981' },
-  ];
+  const donutData = channels.map((c) => ({
+    name: CHANNEL_LABELS[c.channel] || c.channel,
+    value: c.leads || 0,
+    fill: CHANNEL_COLORS[c.channel] || '#64748b',
+  })).filter(d => d.value > 0);
+
+  const totalLeads = kpi.totalLeads?.value || 0;
+  const wonRevenue = kpi.totalRevenue?.value || 0;
 
   return (
-    <AppLayout>
+    <AppLayout title="Reports & Analytics">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -53,7 +73,7 @@ export default function ReportsPage() {
             Reports & Executive Analytics
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Real-time pipeline yield, multi-channel discovery acquisition, and revenue conversion metrics.
+            Reconciled pipeline yield, verified multi-channel acquisition, and closed revenue metrics.
           </p>
         </div>
 
@@ -79,9 +99,9 @@ export default function ReportsPage() {
             size="sm"
             variant="outline"
             icon={Download}
-            onClick={() => alert('Downloading Executive Analytics PDF report...')}
+            onClick={() => window.print()}
           >
-            Export PDF
+            Export Report
           </Button>
         </div>
       </div>
@@ -91,145 +111,157 @@ export default function ReportsPage() {
         <StatCard
           icon={TrendingUp}
           label="Average Deal Size"
-          value="$12,450"
-          delta="+8.4%"
-          trend="up"
-          comparison="vs previous quarter"
+          value={loading ? '...' : (kpi.averageDealSize?.formatted || '£0')}
+          delta={kpi.averageDealSize?.delta || '—'}
+          trend={kpi.averageDealSize?.delta?.startsWith('+') ? 'up' : 'neutral'}
+          comparison={`vs previous ${dateFilter.toLowerCase()}`}
           color="blue"
         />
         <StatCard
           icon={Users}
           label="Discovery Conversion"
-          value="34.2%"
-          delta="+5.1%"
-          trend="up"
-          comparison="ping to qualified lead"
+          value={loading ? '...' : (kpi.discoveryConversion?.formatted || '0%')}
+          delta={kpi.totalLeads?.delta || '—'}
+          trend="neutral"
+          comparison="qualified ÷ mined leads"
           color="indigo"
         />
         <StatCard
           icon={DollarSign}
-          label="Total Closed Pipeline"
-          value={`$${(stats?.stats?.pipelineValue || 115000).toLocaleString()}`}
-          delta="+19.2%"
-          trend="up"
+          label="Total Closed Revenue"
+          value={loading ? '...' : (kpi.totalRevenue?.formatted || '£0')}
+          delta={kpi.totalRevenue?.delta || '—'}
+          trend={kpi.totalRevenue?.delta?.startsWith('+') ? 'up' : 'neutral'}
           comparison="won deals value"
           color="emerald"
         />
         <StatCard
           icon={FileText}
-          label="Proposal Win Rate"
-          value="68.0%"
-          delta="+3.5%"
-          trend="up"
-          comparison="draft to executed"
+          label="Pipeline Win Rate"
+          value={loading ? '...' : (kpi.winRate?.formatted || '0%')}
+          delta={kpi.wonDeals?.delta || '—'}
+          trend={kpi.winRate?.value > 0 ? 'up' : 'neutral'}
+          comparison="won ÷ total closed"
           color="purple"
         />
       </div>
 
-      {/* Charts Grid */}
+      {/* Performance Charts & Breakdowns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Channel Performance Bar Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Discovery Channel Performance & Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div style={{ height: 260, width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={performanceData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <XAxis dataKey="channel" tick={{ fill: '#64748b', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{ background: '#0f172a', color: '#ffffff', borderRadius: 10, border: 'none', fontSize: 12 }}
-                  />
-                  <Bar dataKey="discovered" fill="#93c5fd" name="Discovered" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="qualified" fill="#2563eb" name="Qualified" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="deals" fill="#10b981" name="Deals Won" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Channel Breakdown Table */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-blue-600" />
+                Acquisition Channel Performance
+              </CardTitle>
+              <Badge variant="outline" className="text-[10px]">
+                {dateFilter} Window
+              </Badge>
+            </CardHeader>
 
-        {/* Lead Source Breakdown Donut */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Lead Sources Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div style={{ height: 200, width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sourceDonut}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {sourceDonut.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: '#0f172a', color: '#ffffff', borderRadius: 10, border: 'none', fontSize: 12 }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-              {sourceDonut.map((s) => (
-                <div key={s.name} className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.fill }} />
-                    {s.name}
-                  </span>
-                  <span className="font-bold text-slate-800 dark:text-white">{s.value}%</span>
+            <CardContent>
+              {loading ? (
+                <LoadingSkeleton count={3} />
+              ) : channels.length === 0 ? (
+                <EmptyState
+                  title="No Acquisition Data"
+                  description="Generate leads or import CSVs to see channel performance and conversion rates."
+                  actionLabel="Go to Leads"
+                  onAction={() => window.location.href = '/leads'}
+                />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="pb-3">Source Channel</th>
+                        <th className="pb-3 text-right">Mined Leads</th>
+                        <th className="pb-3 text-right">Qualified</th>
+                        <th className="pb-3 text-right">Won Deals</th>
+                        <th className="pb-3 text-right">Revenue</th>
+                        <th className="pb-3 text-right">Conv Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                      {channels.map((row) => (
+                        <tr key={row.channel} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                          <td className="py-3 font-semibold text-slate-900 dark:text-white">
+                            {CHANNEL_LABELS[row.channel] || row.channel}
+                          </td>
+                          <td className="py-3 text-right text-slate-600 dark:text-slate-300">{row.leads}</td>
+                          <td className="py-3 text-right text-indigo-600 dark:text-indigo-400 font-bold">{row.qualified}</td>
+                          <td className="py-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">{row.won}</td>
+                          <td className="py-3 text-right font-bold text-slate-900 dark:text-white">
+                            {formatCurrency(row.revenue)}
+                          </td>
+                          <td className="py-3 text-right text-slate-500">
+                            {row.winRate}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Performance Table */}
-      <Card hover={false} className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>Detailed Channel Conversion Matrix</CardTitle>
-        </CardHeader>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                <th className="p-4">Acquisition Channel</th>
-                <th className="p-4">Prospects Mined</th>
-                <th className="p-4">Qualified Prospects</th>
-                <th className="p-4">Deals Won</th>
-                <th className="p-4">Total Revenue</th>
-                <th className="p-4">Win Rate</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {performanceData.map((row) => (
-                <tr key={row.channel} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="p-4 font-bold text-slate-900 dark:text-white">{row.channel}</td>
-                  <td className="p-4 font-semibold text-slate-700 dark:text-slate-300">{row.discovered}</td>
-                  <td className="p-4 font-semibold text-blue-600">{row.qualified}</td>
-                  <td className="p-4 font-bold text-emerald-600">{row.deals}</td>
-                  <td className="p-4 font-extrabold text-slate-900 dark:text-white">${row.revenue.toLocaleString()}</td>
-                  <td className="p-4">
-                    <Badge variant="success">
-                      {Math.round((row.deals / row.qualified) * 100)}%
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </Card>
+
+        {/* Source Attribution Donut */}
+        <div>
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <PieIcon className="w-4 h-4 text-indigo-600" />
+                Lead Source Share
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="h-56 flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : donutData.length === 0 ? (
+                <div className="h-56 flex flex-col items-center justify-center text-center p-4">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
+                    <PieIcon className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    No lead sources recorded
+                  </span>
+                  <span className="text-[11px] text-slate-400 mt-0.5">
+                    Sources will populate as leads are added.
+                  </span>
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={donutData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {donutData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '11px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </AppLayout>
   );
 }
