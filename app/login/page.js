@@ -82,14 +82,16 @@ function LoginForm() {
             <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-600 dark:text-red-400 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="flex-1 leading-relaxed">
-                {error}
-                {error.includes('ECONNREFUSED') && (
-                  <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-900 text-[11px] text-red-700 dark:text-red-300 space-y-1">
-                    <div>💡 <strong>How to fix this:</strong></div>
-                    <div>1. If running locally on Windows: open PowerShell as Administrator and run:</div>
-                    <code className="block bg-red-100 dark:bg-red-900/60 p-1.5 rounded font-mono text-[10px]">net start MongoDB</code>
-                    <div>2. Or in <code className="bg-red-100 dark:bg-red-900/60 px-1 py-0.5 rounded font-mono">.env.local</code> / Vercel, set your cloud MongoDB connection string:</div>
-                    <code className="block bg-red-100 dark:bg-red-900/60 p-1.5 rounded font-mono text-[10px]">MONGODB_URI=mongodb+srv://...</code>
+                <div className="font-medium">{error}</div>
+                {(error.includes('ECONNREFUSED') || error.includes('Invalid scheme') || error.includes('Database connection') || error.includes('MONGODB_URI')) && (
+                  <div className="mt-2.5 pt-2 border-t border-red-200 dark:border-red-900 text-[11px] text-red-700 dark:text-red-300 space-y-1.5">
+                    <div className="font-bold">💡 How to fix:</div>
+                    <div>
+                      <strong>On Vercel:</strong> In Project Settings &rarr; Environment Variables, check <code>MONGODB_URI</code>. It must start with <code>mongodb+srv://</code> (e.g. <code>mongodb+srv://user:pass@cluster.mongodb.net/dbname</code>) without quotes or extra text.
+                    </div>
+                    <div>
+                      <strong>Locally on Windows:</strong> Start MongoDB service by running <code>net start MongoDB</code> in PowerShell as Administrator.
+                    </div>
                   </div>
                 )}
               </div>

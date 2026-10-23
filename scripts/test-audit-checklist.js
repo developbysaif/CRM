@@ -46,4 +46,23 @@ const matchingBuf = Buffer.from(secret, 'utf8');
 assert.strictEqual(crypto.timingSafeEqual(tokenBuf, matchingBuf), true);
 console.log('✓ Cron timingSafeEqual securely validates identical tokens');
 
+// 5. MongoDB URI Sanitizer Test (Avoids Invalid Scheme & Common Pitfalls)
+import { sanitizeMongoUri } from '../lib/db.js';
+
+const quoted = sanitizeMongoUri('"mongodb+srv://user:pass@cluster0.mongodb.net/db"');
+assert.strictEqual(quoted, 'mongodb+srv://user:pass@cluster0.mongodb.net/db');
+console.log('✓ MongoDB URI sanitizer strips surrounding quotes');
+
+const prefixed = sanitizeMongoUri('MONGODB_URI=mongodb+srv://user:pass@cluster0.mongodb.net/db');
+assert.strictEqual(prefixed, 'mongodb+srv://user:pass@cluster0.mongodb.net/db');
+console.log('✓ MongoDB URI sanitizer strips accidental "MONGODB_URI=" prefix from Vercel value field');
+
+const missingScheme = sanitizeMongoUri('user:pass@cluster0.mongodb.net/db');
+assert.strictEqual(missingScheme, 'mongodb+srv://user:pass@cluster0.mongodb.net/db');
+console.log('✓ MongoDB URI sanitizer auto-prepends mongodb+srv:// for Atlas clusters');
+
+const localhostResolved = sanitizeMongoUri('mongodb://localhost:27017/ai-leads');
+assert.strictEqual(localhostResolved, 'mongodb://127.0.0.1:27017/ai-leads');
+console.log('✓ MongoDB URI sanitizer normalizes localhost to 127.0.0.1');
+
 console.log('\n🎉 ALL ACCEPTANCE CHECKLIST TESTS PASSED SUCCESSFULLY!');

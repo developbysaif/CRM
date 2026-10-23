@@ -94,10 +94,16 @@ function RegisterForm() {
             <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-600 dark:text-red-400 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="flex-1 leading-relaxed">
-                {error}
-                {error.includes('ECONNREFUSED') && (
-                  <div className="mt-1.5 pt-1.5 border-t border-red-200 dark:border-red-900 text-[11px] text-red-700 dark:text-red-300">
-                    💡 <strong>Tip:</strong> MongoDB is not running locally. Open a terminal and run <code className="bg-red-100 dark:bg-red-900/60 px-1 py-0.5 rounded font-mono">net start MongoDB</code> or use your MongoDB Atlas URI in <code className="bg-red-100 dark:bg-red-900/60 px-1 py-0.5 rounded font-mono">.env.local</code>.
+                <div className="font-medium">{error}</div>
+                {(error.includes('ECONNREFUSED') || error.includes('Invalid scheme') || error.includes('Database connection') || error.includes('MONGODB_URI')) && (
+                  <div className="mt-2.5 pt-2 border-t border-red-200 dark:border-red-900 text-[11px] text-red-700 dark:text-red-300 space-y-1.5">
+                    <div className="font-bold">💡 How to fix:</div>
+                    <div>
+                      <strong>On Vercel:</strong> In Project Settings &rarr; Environment Variables, check <code>MONGODB_URI</code>. It must start with <code>mongodb+srv://</code> (e.g. <code>mongodb+srv://user:pass@cluster.mongodb.net/dbname</code>) without quotes or extra text.
+                    </div>
+                    <div>
+                      <strong>Locally on Windows:</strong> Start MongoDB service by running <code>net start MongoDB</code> in PowerShell as Administrator.
+                    </div>
                   </div>
                 )}
               </div>
