@@ -64,6 +64,13 @@ export async function POST(request) {
     return response;
   } catch (error) {
     console.error('Login error:', error);
-    return apiError('Login failed: ' + (error.message || 'Internal server error'), 500);
+    const msg = error.message || 'Internal server error';
+    if (msg.includes('ECONNREFUSED') || msg.includes('timed out') || msg.includes('Database connection failed')) {
+      return apiError(
+        'Database connection failed (connect ECONNREFUSED 127.0.0.1:27017). Please ensure MongoDB is running locally (run: net start MongoDB), or provide your cloud MongoDB Atlas URI in .env.local (MONGODB_URI).',
+        503
+      );
+    }
+    return apiError('Login failed: ' + msg, 500);
   }
 }

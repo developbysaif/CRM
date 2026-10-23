@@ -1,7 +1,8 @@
 'use client';
 import { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -63,16 +64,40 @@ function LoginForm() {
           Sign in to your CRM
         </h1>
         <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-          Enterprise Lead Intelligence & Outreach Engine
+          Enterprise Lead Intelligence &amp; Outreach Engine
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white dark:bg-slate-900 py-8 px-6 sm:px-8 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none">
+          {/* Segmented Auth Navigation */}
+          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl mb-6">
+            <div className="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs">
+              Sign In
+            </div>
+            <Link
+              href="/register"
+              className="flex-1 py-2 text-center text-xs font-semibold rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all no-underline"
+            >
+              Sign Up
+            </Link>
+          </div>
+
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
-              {error}
+            <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-600 dark:text-red-400 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="flex-1 leading-relaxed">
+                {error}
+                {error.includes('ECONNREFUSED') && (
+                  <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-900 text-[11px] text-red-700 dark:text-red-300 space-y-1">
+                    <div>💡 <strong>How to fix this:</strong></div>
+                    <div>1. If running locally on Windows: open PowerShell as Administrator and run:</div>
+                    <code className="block bg-red-100 dark:bg-red-900/60 p-1.5 rounded font-mono text-[10px]">net start MongoDB</code>
+                    <div>2. Or in <code className="bg-red-100 dark:bg-red-900/60 px-1 py-0.5 rounded font-mono">.env.local</code> / Vercel, set your cloud MongoDB connection string:</div>
+                    <code className="block bg-red-100 dark:bg-red-900/60 p-1.5 rounded font-mono text-[10px]">MONGODB_URI=mongodb+srv://...</code>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -159,6 +184,15 @@ function LoginForm() {
                 Autofill
               </button>
             </div>
+          </div>
+
+          <div className="mt-5 text-center">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Don&apos;t have an account?{' '}
+              <Link href="/register" className="font-bold text-blue-600 hover:text-blue-700 no-underline">
+                Create an account
+              </Link>
+            </span>
           </div>
         </div>
 

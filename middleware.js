@@ -6,6 +6,7 @@ const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 const PUBLIC_PATHS = [
   '/login',
+  '/register',
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/logout',
@@ -48,8 +49,8 @@ export async function middleware(request) {
     }
   }
 
-  // 4. If visiting /login while already authenticated, redirect to /dashboard
-  if (pathname === '/login') {
+  // 4. If visiting /login or /register while already authenticated, redirect to /dashboard
+  if (pathname === '/login' || pathname === '/register') {
     if (sessionUser) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
