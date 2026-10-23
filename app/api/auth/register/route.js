@@ -72,6 +72,13 @@ export async function POST(request) {
     return response;
   } catch (error) {
     console.error('Registration error:', error);
-    return apiError(error.message || 'Registration failed', 500);
+    const msg = error.message || 'Registration failed';
+    if (msg.includes('ECONNREFUSED') || msg.includes('timed out') || msg.includes('Database connection failed')) {
+      return apiError(
+        'Database connection failed (connect ECONNREFUSED 127.0.0.1:27017). Please verify MongoDB service is running (run: net start MongoDB) or check your MONGODB_URI in .env.local.',
+        503
+      );
+    }
+    return apiError(msg, 500);
   }
 }

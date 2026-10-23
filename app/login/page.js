@@ -2,7 +2,7 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -40,11 +40,6 @@ function LoginForm() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleFillDemo = () => {
-    setEmail('admin@leadai.pro');
-    setPassword('Admin123!');
   };
 
   return (
@@ -164,29 +159,7 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Seed Admin helper for first time login */}
-          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40">
-              <div className="text-[11px] text-slate-600 dark:text-slate-400">
-                <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                  Admin Credentials
-                </div>
-                <div className="font-mono text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  admin@leadai.pro · Admin123!
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleFillDemo}
-                className="px-2.5 py-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-900 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors shadow-2xs"
-              >
-                Autofill
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-5 text-center">
+          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
             <span className="text-xs text-slate-500 dark:text-slate-400">
               Don&apos;t have an account?{' '}
               <Link href="/register" className="font-bold text-blue-600 hover:text-blue-700 no-underline">
